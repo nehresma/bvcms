@@ -21,7 +21,7 @@ namespace CmsWeb.Areas.Public.Controllers
 								 };
 
 			BaseMessage br = new BaseMessage();
-			br.error = 0;
+			br.setNoError();
 			br.count = countries.Count();
 			br.data = JsonConvert.SerializeObject(countries.ToList());
 
@@ -39,7 +39,7 @@ namespace CmsWeb.Areas.Public.Controllers
 							 };
 
 			BaseMessage br = new BaseMessage();
-			br.error = 0;
+			br.setNoError();
 			br.count = states.Count();
 			br.data = JsonConvert.SerializeObject(states.ToList());
 
@@ -58,7 +58,7 @@ namespace CmsWeb.Areas.Public.Controllers
 								};
 
 			BaseMessage br = new BaseMessage();
-			br.error = 0;
+			br.setNoError();
 			br.count = statuses.Count();
 			br.data = JsonConvert.SerializeObject(statuses.ToList());
 
@@ -85,7 +85,7 @@ namespace CmsWeb.Areas.Public.Controllers
 							  };
 
 			BaseMessage br = new BaseMessage();
-			br.error = 0;
+			br.setNoError();
 			br.count = actions.Count();
 			br.data = JsonConvert.SerializeObject(actions.ToList());
 
@@ -141,7 +141,7 @@ namespace CmsWeb.Areas.Public.Controllers
 			}
 
 			BaseMessage br = new BaseMessage();
-			br.error = 0;
+			br.setNoError();
 			br.count = campusList.Count();
 			br.data = JsonConvert.SerializeObject(campusList);
 

@@ -8,9 +8,9 @@ namespace CmsWeb.MobileAPI
 		public int version = 0;
 		public int device = API_DEVICE_UNKNOWN;
 
-		public int error = 1;
-		public int count = 0;
+		public int error = API_ERROR_UKNOWN;
 
+		public int count = 0;
 		public int id = 0;
 
 		public int argInt = 0;
@@ -48,11 +48,26 @@ namespace CmsWeb.MobileAPI
 			return br;
 		}
 
-		public BaseMessage setData(string newData)
+		public BaseMessage setData(string data)
 		{
-			data = newData;
+			this.data = data;
 			return this;
 		}
+
+		public void setError(int error)
+		{
+			this.error = error;
+		}
+
+		public void setNoError()
+		{
+			this.error = API_ERROR_NONE;
+		}
+
+		// API Device Numbers
+		public const int API_DEVICE_UNKNOWN = 0;
+		public const int API_DEVICE_IOS = 1;
+		public const int API_DEVICE_ANDROID = 2;
 
 		// API Login Errors
 		public const int API_ERROR_NONE = 0;
@@ -63,9 +78,14 @@ namespace CmsWeb.MobileAPI
 		public const int API_ERROR_IMPROPER_HEADER_STRUCTURE = -5;
 		public const int API_ERROR_INVALID_CREDENTIALS = -6;
 
-		// API Device Numbers
-		public const int API_DEVICE_UNKNOWN = 0;
-		public const int API_DEVICE_IOS = 1;
-		public const int API_DEVICE_ANDROID = 2;
+		// API Default Errors
+		public const int API_ERROR_UKNOWN = 1;
+
+		// API People Errors
+		public const int API_ERROR_PERSON_NOT_FOUND = 100;
+
+		// API Push Registration Errors
+		public const int API_PUSH_ID_ALREADY_EXISTS = 700;
+		public const int API_PUSH_ID_DOESNT_EXISTS = 701;
 	}
 }

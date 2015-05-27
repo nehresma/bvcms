@@ -27,7 +27,7 @@ namespace CmsWeb.Areas.Public.Controllers
 				return BaseMessage.createErrorReturn("Authentication failed, please try again", BaseMessage.API_ERROR_INVALID_CREDENTIALS);
 
 			var br = new BaseMessage();
-			br.error = 0;
+			br.setNoError();
 			br.data = JsonConvert.SerializeObject(new CheckInInformation(getSettings(), getCampuses()));
 			return br;
 		}
@@ -83,7 +83,7 @@ namespace CmsWeb.Areas.Public.Controllers
 
 			DbUtil.Db.SubmitChanges();
 
-			br.error = 0;
+			br.setNoError();
 			br.id = setting.Id;
 			br.count = 1;
 
