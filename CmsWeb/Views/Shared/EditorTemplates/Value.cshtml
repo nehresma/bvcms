@@ -22,18 +22,19 @@
                 <td>
                     <a href="#" data-pk="@Model.Id"
                        data-name="@Model.DataName"
-                       class="@Model.EditableClass" 
+                       class="@Model.EditableClass"
                        style="white-space: pre-line;"
                        data-url="@Model.EditUrl"
-                       @if (dv.HasValue()) { <text> data-value="@dv" </text>    }
-                       @if (ds.HasValue()) {  <text> data-source="@ds" </text>   }>@Html.Raw(Model)</a>
+                       @if (Model.Type == "Date") { <text> data-showbuttons="false" data-savenochange="true" </text> }
+                       @if (dv.HasValue()) { <text> data-value="@dv" </text> }
+                       @if (ds.HasValue()) { <text> data-source="@ds" </text> }>@Html.Raw(Model)</a>
                 </td>
             }
             else
             {
                 <td>@Html.Raw(Model)</td>
             }
-            if (!Model.Standard && Model.UserCanEdit())
+            if (Model.UserCanEdit())
             {
                 <td style ="width: 50px;">
                     <a href="@Model.DeleteUrl" class="ajax btn btn-danger btn-sm" data-confirm="Are you sure?" data-confirm-type="warning" data-confirm-btn-class="btn-danger" data-confirm-btn-text="Yes, delete!"><i class="fa fa-trash"></i> Delete</a>

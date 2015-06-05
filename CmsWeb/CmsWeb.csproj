@@ -445,6 +445,7 @@
     <Compile Include="Areas\Reports\Models\Attendance\CheckinControlModel.cs" />
     <Compile Include="Areas\Reports\Models\Attendance\CheckinControlResult.cs" />
     <Compile Include="Areas\Reports\Models\Attendance\WeeklyAttendanceModel.cs" />
+    <Compile Include="Areas\Search\Models\RegistrationSearch\IncompleteRegistrations.cs" />
     <Compile Include="Areas\Reports\Models\Other\WeeklyDecisionsModel.cs" />
     <Compile Include="Areas\Reports\Models\Enrollment\EnrollmentControlModel.cs" />
     <Compile Include="Areas\Manage\Controllers\CheckinLabelsController.cs" />
@@ -728,8 +729,12 @@
     <EmbeddedResource Include="Areas\Public\Controllers\APITestPlan.xml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <Content Include="Areas\OnlineReg\Views\OnlineReg\ClaimVolSub.cshtml" />
     <Content Include="Areas\OnlineReg\Views\OnlineReg\EditorTemplates\AskGradeOptions.cshtml" />
     <Content Include="Areas\OnlineReg\Views\OnlineReg\RequestResponse.cshtml" />
+    <Content Include="Areas\OnlineReg\Views\OnlineReg\RsvpLinkSg.cshtml" />
+    <Content Include="Areas\OnlineReg\Views\OnlineReg\SendLink.cshtml" />
+    <Content Include="Areas\OnlineReg\Views\OnlineReg\VoteLinkSg.cshtml" />
     <Content Include="Areas\People\Views\Person\Family\Related.cshtml">
       <SubType>Code</SubType>
     </Content>
@@ -1392,11 +1397,6 @@
     <Content Include="Scripts\additional-methods.js" />
     <Content Include="Scripts\additional-methods.min.js" />
     <Content Include="Areas\Reports\Views\Reports\EditCustomReport.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\VoteLinkSg.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\RsvpLinkSg.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\SendLink.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\RequestResponse.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\ClaimVolSub.cshtml" />
     <Content Include="Areas\Manage\Views\Account\SetPasswordConfirm.cshtml" />
     <Content Include="package.json" />
     <Content Include="Content\touchpoint\fonts\glyphicons-halflings-regular.eot" />
@@ -1435,6 +1435,8 @@
     <Content Include="Areas\Reports\Views\Reports\Application.cshtml" />
     <Content Include="Areas\Manage\Views\Batch\FindTagPeople.cshtml" />
     <Content Include="Areas\Org\Views\OrgSearch\DisplayAttendanceNotices.cshtml" />
+    <Content Include="Areas\Search\Views\RegistrationSearch\IncompleteRegistrations.cshtml" />
+    <Content Include="Areas\Search\Views\RegistrationSearch\IncompleteResults.cshtml" />
     <None Include="Properties\PublishProfiles\test2.pubxml" />
     <Content Include="Areas\OnlineReg\Views\OnlineReg\EditorTemplates\AskText.cshtml" />
     <Content Include="Areas\Org\Views\Org2\Dialogs.cshtml" />
@@ -2269,10 +2271,6 @@
     <Content Include="Areas\Org\Views\Org2\Registration\NotifyList.cshtml" />
     <Content Include="Areas\OnlineReg\Views\OnlineReg\EditorTemplates\AskSize.cshtml" />
     <Content Include="Areas\Manage\Views\Account\SetPasswordConfirm.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\ClaimVolSub.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\RsvpLinkSg.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\SendLink.cshtml" />
-    <Content Include="Areas\OnlineReg\Views\OnlineReg\VoteLinkSg.cshtml" />
     <Content Include="Areas\Reports\Views\Reports\EditCustomReport.cshtml" />
     <Content Include="Areas\Org\Views\Meeting\AttendanceByGroups.cshtml" />
     <Content Include="Areas\Org\Views\Organization\OrgPickList2.cshtml" />
@@ -2797,9 +2795,6 @@
     <Content Include="Content\touchpoint\src\less\footers.less" />
     <Content Include="Views\Shared\PageHeader.cshtml" />
     <Content Include="Views\Shared\PageFooter.cshtml" />
-    <None Include="Web.bvcms.config">
-      <DependentUpon>Web.config</DependentUpon>
-    </None>
     <Content Include="Views\Shared\PagerHidden.cshtml" />
     <Content Include="Views\Shared\EditorTemplates\DateAndTime.cshtml" />
     <Content Include="Views\Shared\DisplayTemplates\DateAndTime.cshtml" />
@@ -2808,9 +2803,6 @@
     <Content Include="Views\Shared\DisplayTemplates\Time.cshtml" />
     <Content Include="Views\MobileAppMenu\Index.cshtml" />
     <Content Include="Views\Shared\Message2.cshtml" />
-    <None Include="Web.TeamCity.config">
-      <DependentUpon>Web.config</DependentUpon>
-    </None>
     <None Include="Web.test2.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
