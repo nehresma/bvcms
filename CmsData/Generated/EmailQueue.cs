@@ -51,6 +51,8 @@ namespace CmsData
 		private bool? _NoReplacements;
 		
 		private int? _SendFromOrgId;
+		
+		private bool? _FinanceOnly;
 
         private string _CClist;
 
@@ -121,12 +123,14 @@ namespace CmsData
 		
 		partial void OnSendFromOrgIdChanging(int? value);
 		partial void OnSendFromOrgIdChanged();
-
+		
+		partial void OnFinanceOnlyChanging(bool? value);
+		partial void OnFinanceOnlyChanged();
 
         partial void OnCClistChanging(string value);
         partial void OnCClistChanged();
 
-        #endregion
+#endregion
         public EmailQueue()
 		{
 			
@@ -522,6 +526,27 @@ namespace CmsData
 
 		}
 
+		
+		[Column(Name="FinanceOnly", UpdateCheck=UpdateCheck.Never, Storage="_FinanceOnly", DbType="bit")]
+		public bool? FinanceOnly
+		{
+			get { return this._FinanceOnly; }
+
+			set
+			{
+				if (this._FinanceOnly != value)
+				{
+				
+                    this.OnFinanceOnlyChanging(value);
+					this.SendPropertyChanging();
+					this._FinanceOnly = value;
+					this.SendPropertyChanged("FinanceOnly");
+					this.OnFinanceOnlyChanged();
+				}
+
+			}
+
+		}
 
 
         [Column(Name = "CClist", UpdateCheck = UpdateCheck.Never, Storage = "_CClist", DbType = "nvarchar")]
@@ -544,7 +569,6 @@ namespace CmsData
             }
 
         }
-
 
 
         #endregion
