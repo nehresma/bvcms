@@ -166,6 +166,20 @@ namespace CmsWeb.Areas.Reports.Models
                     sel = sel.Replace("{smallgroup}", DblQuotes(smallgroup));
                     sb.AppendFormat("\t{0}{1} AS [{2}]\n", comma, sel, DblQuotes(smallgroup));
                 }
+                else if (name.StartsWith("OrgMember"))
+                {
+                    var cc = mc.SpecialColumns[name];
+                    var oid = (string)e.Attribute("orgid");
+                    if (!oid.HasValue())
+                        throw new Exception("missing orgid on column " + cc.Column);
+
+                    if (!joins.Contains(cc.Join))
+                    {
+                        mc.Joins[cc.Join] = mc.Joins[cc.Join].Replace("{orgid}", oid);
+                        joins.Add(cc.Join);
+                    }
+                    sb.AppendFormat("\t{0}{1} AS [{2}]\n", comma, cc.Select, DblQuotes(name));
+                }
                 else if (name.StartsWith("Amount") && Regex.IsMatch(name, @"\AAmount(Tot|Paid|Due)\z"))
                 {
                     var cc = mc.SpecialColumns[name];
@@ -263,18 +277,12 @@ namespace CmsWeb.Areas.Reports.Models
                 }
                 if (orgid.HasValue)
                 {
-                    w.Start("Column")
-                        .Attr("name", "AmountTot")
-                        .Attr("orgid", orgid)
-                        .End();
-                    w.Start("Column")
-                        .Attr("name", "AmountPaid")
-                        .Attr("orgid", orgid)
-                        .End();
-                    w.Start("Column")
-                        .Attr("name", "AmountDue")
-                        .Attr("orgid", orgid)
-                        .End();
+                    foreach (var c in mc.SpecialColumns.Values.Where(vv => vv.Context == "org"))
+                        w.Start("Column")
+                            .Attr("name", c.Column)
+                            .Attr("orgid", orgid)
+                            .End();
+
                     var smallgroups = from sg in _db.MemberTags
                                       where sg.OrgId == orgid
                                       orderby sg.Name

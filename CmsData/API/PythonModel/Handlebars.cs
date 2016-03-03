@@ -1,5 +1,4 @@
 ﻿using HandlebarsDotNet;
-using IronPython.Modules;
 using UtilityExtensions;
 
 namespace CmsData
@@ -14,6 +13,7 @@ namespace CmsData
             Handlebars.RegisterHelper("DataLabelStyle", (writer, context, args) => { writer.Write(CssStyle.DataLabelStyle); });
             Handlebars.RegisterHelper("LabelStyle", (writer, context, args) => { writer.Write(CssStyle.LabelStyle); });
             Handlebars.RegisterHelper("DataStyle", (writer, context, args) => { writer.Write(CssStyle.DataStyle); });
+
             Handlebars.RegisterHelper("ServerLink", (writer, context, args) => { writer.Write(db.ServerLink().TrimEnd('/')); });
             Handlebars.RegisterHelper("FmtZip", (writer, context, args) => { writer.Write(args[0].ToString().FmtZip()); });
             Handlebars.RegisterHelper("IfEqual", (writer, options, context, args) =>
@@ -34,8 +34,10 @@ namespace CmsData
             {
                 var s = args[0].ToString();
                 var n = args[1].ToInt();
-                var a = s.SplitStr(" ", 2);
-                writer.Write(a[n]);
+                var ntoks = args.Length > 2 ? args[2].ToInt() : 2;
+                var sep = args.Length > 3 ? args[3].ToString() : " ";
+                var a = s.SplitStr(sep, ntoks);
+                writer.Write(a[n].trim());
             });
 
             // Format helper in form of:  {{Fmt value "fmt"}}
@@ -53,10 +55,15 @@ namespace CmsData
 
         private static bool IsEqual(object[] args)
         {
-            var eq = args[0] == args[1];
+            // use the XOR operator: true if one arg is null and the other is not
             if (args[0] == null ^ args[1] == null)
-                eq = false;
-            else if (!eq && args[0] is int)
+                return false;
+            // at this point, either both are null or both are not null
+            if (args[0] == null)
+                return true;  // both must be null 
+            // at this point both are not null
+            var eq = args[0].Equals(args[1]);
+            if (!eq && args[0] is int)
                 eq = args[0].ToString() == args[1]?.ToString();
             return eq;
         }
