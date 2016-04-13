@@ -1,26 +1,16 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Mvc;
-using System.Web.UI;
 using CmsData;
-using CmsData.OnlineRegSummaryText;
-using CmsData.Registration;
-using CmsWeb.Areas.OnlineReg.Models;
 using CmsWeb.Areas.People.Models;
-using CmsWeb.Areas.Search.Models;
 using Dapper;
 using Newtonsoft.Json;
 using UtilityExtensions;
 using CmsWeb.Models;
-using HandlebarsDotNet;
-using HtmlAgilityPack;
 
 namespace CmsWeb.Controllers
 {
@@ -203,13 +193,33 @@ namespace CmsWeb.Controllers
         {
             if (!CanRunScript(body))
                 return "Not Authorized to run this script";
-            if (body.Contains("@qtagid"))
+            if (body.Contains("@qtagid", ignoreCase:true))
             {
                 var id = db.FetchLastQuery().Id;
                 var tag = db.PopulateSpecialTag(id, DbUtil.TagTypeId_Query);
                 int? qtagid = tag.Id;
                 p.Add("@qtagid", qtagid);
+                ViewBag.Type = "SqlReport";
             }
+            else if (body.Contains("@CurrentOrgId", ignoreCase:true))
+            {
+                var oid = DbUtil.Db.CurrentOrgId0;
+                p.Add("@CurrentOrgId", oid);
+                if(oid > 0)
+                {
+                    var name = DbUtil.Db.LoadOrganizationById(oid).FullName2;
+                    ViewBag.Name2 = name;
+                    ViewBag.Type = "SqlReport";
+                }
+            }
+            else if (body.Contains("@OrgIds", ignoreCase: true))
+            {
+                var oid = DbUtil.Db.CurrentOrgId0;
+                p.Add("@OrgIds", oid.ToString());
+                ViewBag.Type = "OrgSearchSqlReport";
+            }
+            else
+                ViewBag.Type = "SqlReport";
             p.Add("@p1", parameter ?? "");
             return body;
         }
@@ -233,8 +243,11 @@ namespace CmsWeb.Controllers
 
             if (script.StartsWith("Not Authorized"))
                 return Message(script);
-            ViewBag.name = title ?? $"Run Script {name} {parameter}";
+            ViewBag.Name = title ?? $"{name.SpaceCamelCase()} {parameter}";
+            ViewBag.Report = name;
+            ViewBag.Url = Request.Url?.PathAndQuery;
             var rd = cn.ExecuteReader(script, p, commandTimeout: 1200);
+            ViewBag.ExcelUrl = Request.Url?.AbsoluteUri.Replace("RunScript/", "RunScriptExcel/");
             return View(rd);
         }
 
@@ -292,14 +305,20 @@ namespace CmsWeb.Controllers
                     var tag = DbUtil.Db.PopulateSpecialTag(id, DbUtil.TagTypeId_Query);
                     script = script.Replace("@qtagid", tag.Id.ToString());
                 }
-
                 var pe = new PythonModel(Util.Host);
+                if (script.Contains("@BlueToolbarTagId"))
+                {
+                    var id = DbUtil.Db.FetchLastQuery().Id;
+                    pe.DictionaryAdd("BlueToolbarGuid", id.ToCode());
+                }
 
                 foreach (var key in Request.QueryString.AllKeys)
                     pe.DictionaryAdd(key, Request.QueryString[key]);
 
                 pe.RunScript(script);
 
+                ViewBag.report = name;
+                ViewBag.url = Request.Url?.PathAndQuery;
                 return View(pe);
             }
             catch (Exception ex)

@@ -5,10 +5,10 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Web.UI.HtmlControls;
 using Dapper;
 using UtilityExtensions;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 
 namespace CmsData
 {
@@ -37,7 +37,7 @@ namespace CmsData
                 using (var rd = db.Connection.ExecuteReader(sql, p, commandTimeout: 300))
                 {
                     var table = Table(rd);
-                return $@"
+                    return $@"
 <div class=""report box box-responsive"">
   <div class=""box-content"">
     <div class=""table-responsive"">
@@ -47,101 +47,144 @@ namespace CmsData
   </div>
 </div>
 ";
-                    
                 }
             }
         }
-        public static HtmlTable HtmlTable(IDataReader rd)
+
+        public static Table HtmlTable(IDataReader rd, string title = null, int? maxrows = null)
         {
             var pctnames = new List<string> {"pct", "percent"};
-            var t = new HtmlTable();
+            var t = new Table();
             t.Attributes.Add("class", "table table-striped");
-            var h = new HtmlTableRow();
+            if (title.HasValue())
+            {
+                var c = new TableHeaderCell
+                {
+                    ColumnSpan = rd.FieldCount,
+                    Text = title,
+                };
+                c.Style.Add(HtmlTextWriterStyle.TextAlign, "center");
+                var r = new TableHeaderRow {TableSection = TableRowSection.TableHeader};
+                r.Cells.Add(c);
+                t.Rows.Add(r);
+            }
+            var h = new TableHeaderRow {TableSection = TableRowSection.TableHeader};
             for (var i = 0; i < rd.FieldCount; i++)
             {
                 var typ = rd.GetDataTypeName(i);
                 var nam = rd.GetName(i).ToLower();
-                string align = null;
+                var align = HorizontalAlign.NotSet;
                 switch (typ.ToLower())
                 {
                     case "decimal":
-                        align = "right";
+                        align = HorizontalAlign.Right;
                         break;
                     case "int":
-                        if (!nam.EndsWith("id") && !nam.EndsWith("id2"))
-                            align = "right";
+                        if (nam != "Year" && !nam.EndsWith("id") && !nam.EndsWith("id2"))
+                            align = HorizontalAlign.Right;
                         break;
                 }
-                h.Cells.Add(new HtmlTableCell
+                h.Cells.Add(new TableHeaderCell
                 {
-                    InnerText = rd.GetName(i),
-                    Align = align
+                    Text = rd.GetName(i),
+                    HorizontalAlign = align
                 });
             }
             t.Rows.Add(h);
+            var rn = 0;
             while (rd.Read())
             {
-                var r = new HtmlTableRow();
+                rn++;
+                if (maxrows.HasValue && rn > maxrows)
+                    break;
+                var r = new TableRow();
                 for (var i = 0; i < rd.FieldCount; i++)
                 {
                     var typ = rd.GetDataTypeName(i);
                     var nam = rd.GetName(i).ToLower();
                     string s;
-                    string align = null;
+                    var align = HorizontalAlign.NotSet;
+
                     switch (typ.ToLower())
                     {
                         case "decimal":
+                            var dec = rd[i].ToNullableDecimal();
                             s = StartsEndsWith(pctnames, nam)
-                                ? Convert.ToDecimal(rd[i]).ToString("N1") + "%"
-                                : Convert.ToDecimal(rd[i]).ToString("c");
-                            align = "right";
+                                ? dec.ToString2("N1", "%")
+                                : dec.ToString2("c");
+                            align = HorizontalAlign.Right;
                             break;
+                        case "real":
                         case "float":
+                            var dbl = rd[i].ToNullableDouble();
                             s = StartsEndsWith(pctnames, nam)
-                                ? Convert.ToDouble(rd[i]).ToString("N1") + "%"
-                                : Convert.ToDouble(rd[i]).ToString("N1");
-                            align = "right";
+                                ? dbl.ToString2("N1", "%")
+                                : dbl.ToString2("N1");
+                            align = HorizontalAlign.Right;
+                            break;
+                        case "date":
+                        case "datetime":
+                            var dt = rd[i].ToNullableDate();
+                            if (dt.HasValue && dt.Value.Date != dt.Value)
+                                s = dt.FormatDateTime();
+                            else
+                                s = dt.FormatDate();
                             break;
                         case "int":
-                            var ii = rd[i].ToInt();
-                            if (nam.Equal("peopleid"))
+                            var ii = rd[i].ToNullableInt();
+                            if (nam.Equal("peopleid") || nam.Equal("spouseid"))
                                 s = $"<a href='/Person2/{ii}' target='Person'>{ii}</a>";
                             else if (nam.Equal("organizationid"))
                                 s = $"<a href='/Org/{ii}' target='Organization'>{ii}</a>";
-                            else if (nam.EndsWith("id") || nam.EndsWith("id2"))
-                                s = rd[i].ToInt().ToString();
+                            else if (nam.EndsWith("id") || nam.EndsWith("id2") || nam.Equal("Year"))
+                                s = ii.ToString();
                             else
                             {
-                                s = rd[i].ToInt().ToString("N0");
-                                align = "right";
+                                s = ii.ToString2("N0");
+                                align = HorizontalAlign.Right;
                             }
                             break;
                         default:
                             s = rd[i].ToString();
+                            if (s == "Total")
+                                s = $"<strong>{s}</strong>";
                             break;
                     }
-                    r.Cells.Add(new HtmlTableCell()
+                    r.Cells.Add(new TableCell()
                     {
-                        InnerHtml = s,
-                        Align = align
+                        Text = s,
+                        HorizontalAlign = align,
                     });
                 }
                 t.Rows.Add(r);
             }
-            var tc = new HtmlTableCell
+            var rowcount = $"Count = {rn} rows";
+            if (maxrows.HasValue && rn > maxrows)
+                rowcount = $"Displaying {maxrows} of {rn} rows";
+            var tc = new TableCell()
             {
-                ColSpan = rd.FieldCount,
-                InnerText = $"Count = {t.Rows.Count - 1} rows"
+                ColumnSpan = rd.FieldCount,
+                Text = rowcount,
             };
-            var tr = new HtmlTableRow();
+            var tr = new TableFooterRow();
             tr.Cells.Add(tc);
             t.Rows.Add(tr);
             return t;
         }
+
         public static bool StartsEndsWith(List<string> list, string name)
         {
-            return list.Any(vv => name.StartsWith(vv) || name.EndsWith(vv));
+            return list.Any(vv =>
+                name.StartsWith(vv, StringComparison.OrdinalIgnoreCase)
+                || name.EndsWith(vv, StringComparison.OrdinalIgnoreCase));
         }
+
+        public static bool StartsEndsWith(string pattern, string name)
+        {
+            return name.StartsWith(pattern, StringComparison.OrdinalIgnoreCase)
+                   || name.EndsWith(pattern, StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string Table(IDataReader rd)
         {
             var t = HtmlTable(rd);

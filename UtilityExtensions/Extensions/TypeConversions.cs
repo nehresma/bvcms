@@ -163,7 +163,7 @@ namespace UtilityExtensions
         }
         public static string ToSuitableId(this string s)
         {
-            var v = Regex.Replace(s, @"\[|\]|\s|\(|\)|,|=", "_").Replace("__", "_").TrimEnd('_');
+            var v = Regex.Replace(s.Replace('/','-'), @"\[|\]|\s|\(|\)|,|=|/", "_").Replace("__", "_").TrimEnd('_');
             var chars = v.ToCharArray();
             var sb = new StringBuilder();
             for (var i = 0; i < chars.Length; i++)
@@ -176,6 +176,12 @@ namespace UtilityExtensions
                 sb.Append(chars[i]);
             }
             return sb.ToString();
+        }
+
+        public static string ToSuitableEvName(this string s)
+        {
+            var a = s.ToSuitableId().Split('_');
+            return string.Join("", a.Select(vv => vv.ToProper()));
         }
         public static string ToCode(this Guid guid)
         {
@@ -215,6 +221,30 @@ namespace UtilityExtensions
             {
                 return null;
             }
+        }
+        public static double? ToNullableDouble(this object o)
+        {
+            if (o is DBNull)
+                return null;
+            return Convert.ToDouble(o);
+        }
+        public static decimal? ToNullableDecimal(this object o)
+        {
+            if (o is DBNull)
+                return null;
+            return Convert.ToDecimal(o);
+        }
+        public static DateTime? ToNullableDate(this object o)
+        {
+            if (o is DBNull)
+                return null;
+            return o.ToDate();
+        }
+        public static int? ToNullableInt(this object o)
+        {
+            if (o is DBNull)
+                return null;
+            return o.ToInt();
         }
     }
 }

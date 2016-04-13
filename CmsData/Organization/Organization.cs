@@ -25,6 +25,8 @@ namespace CmsData
 
         public string FullName2 => DivisionName + ", " + FormatOrgName(OrganizationName, LeaderName, Location);
 
+        public string Title => Util.PickFirst(RegistrationTitle, OrganizationName);
+
         private string tagString;
         public string TagString()
         {
@@ -311,14 +313,14 @@ namespace CmsData
         public static Organization FetchOrCreateOrganization(CMSDataContext db, int divid, string organization)
         {
             var o = db.LoadOrganizationByName(organization);
-            if (o == null)
+            if(o == null || o.DivisionId != divid)
                 return CreateOrganization(db, divid, organization);
             return o;
         }
         public static Organization FetchOrCreateOrganization(CMSDataContext db, Division division, string organization)
         {
             var o = db.LoadOrganizationByName(organization);
-            if (o == null)
+            if(o == null || o.DivisionId != division.Id)
                 return CreateOrganization(db, division, organization);
             return o;
         }
@@ -443,7 +445,7 @@ namespace CmsData
             oev.Data = value;
             oev.DataType = multiline ? "text" : null;
         }
-        public void AddToExtraData(string field, string value)
+        public void AddToExtraText(string field, string value)
         {
             if (!value.HasValue())
                 return;
@@ -461,7 +463,7 @@ namespace CmsData
             return oev?.Data;
         }
 
-        public void AddEditExtraValue(string field, string value)
+        public void AddEditExtraCode(string field, string value)
         {
             if (!field.HasValue())
                 return;
@@ -472,13 +474,13 @@ namespace CmsData
             ev.TransactionTime = DateTime.Now;
         }
 
-        public void AddEditExtraData(string field, string value)
+        public void AddEditExtraText(string field, string value, DateTime? dt = null)
         {
             if (!value.HasValue())
                 return;
             var ev = GetExtraValue(field);
             ev.Data = value;
-            ev.TransactionTime = DateTime.Now;
+            ev.TransactionTime = dt ?? DateTime.Now;
         }
 
         public void AddEditExtraDate(string field, DateTime? value)
@@ -506,6 +508,18 @@ namespace CmsData
             ev.TransactionTime = DateTime.Now;
         }
 
+        public void AddEditExtraValue(string field, string code, DateTime? date, string text, bool? bit, int? intn, DateTime? dt = null)
+        {
+            var ev = GetExtraValue(field);
+            ev.StrValue = code;
+            ev.Data = text;
+            ev.DateValue = date;
+            ev.IntValue = intn;
+            ev.BitValue = bit;
+            ev.UseAllValues = true;
+            ev.TransactionTime = dt ?? DateTime.Now;
+        }
+
         public void RemoveExtraValue(CMSDataContext db, string field)
         {
             var ev = OrganizationExtras.AsEnumerable().FirstOrDefault(ee => string.Compare(ee.Field, field, ignoreCase: true) == 0);
@@ -524,6 +538,47 @@ namespace CmsData
             return !db.OrganizationExtras.Any(ee => ee.Field == newfield && ee.Type != type);
         }
 
+        public static void AddEditExtraValue(CMSDataContext db, int id, string field, string value)
+        {
+            if (!value.HasValue())
+                return;
+            var ev = GetExtraValue(db, id, field);
+            ev.StrValue = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+        public static void AddEditExtraData(CMSDataContext db, int id, string field, string value)
+        {
+            if (!value.HasValue())
+                return;
+            var ev = GetExtraValue(db, id, field);
+            ev.Data = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+        public static void AddEditExtraDate(CMSDataContext db, int id, string field, DateTime? value)
+        {
+            if (!value.HasValue)
+                return;
+            var ev = GetExtraValue(db, id, field);
+            ev.DateValue = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+        public static void AddEditExtraInt(CMSDataContext db, int id, string field, int? value)
+        {
+            if (!value.HasValue)
+                return;
+            var ev = GetExtraValue(db, id, field);
+            ev.IntValue = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+        public static void AddEditExtraBool(CMSDataContext db, int id, string field, bool? value)
+        {
+            if (!value.HasValue)
+                return;
+            var ev = GetExtraValue(db, id, field);
+            ev.BitValue = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+
         private int? regLimitCount;
         public int RegLimitCount(CMSDataContext db)
         {
@@ -539,7 +594,6 @@ namespace CmsData
         public void UpdateRegSetting(Registration.Settings os)
         {
             RegSettingXml = Util.Serialize(os);
-            RegSetting = RegistrationSettingsParser.Parser.Output(os);
         }
         public static void AddMemberTag(CMSDataContext db, int orgId, string name)
         {

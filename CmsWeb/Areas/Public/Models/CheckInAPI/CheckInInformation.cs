@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using System.Collections.Generic;
 
 namespace CmsWeb.CheckInAPI
 {
@@ -16,6 +13,11 @@ namespace CmsWeb.CheckInAPI
             this.settings = settings;
             this.campuses = campuses;
             this.labels = labels;
+
+            if (this.campuses.Count > 0)
+            {
+                this.campuses.Insert(0, new CheckInCampus() { id = 0, name = "All Campuses" });
+            }
         }
     }
 }

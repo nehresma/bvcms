@@ -324,11 +324,8 @@ namespace CmsData
         }
         public void TagAll(IQueryable<Person> list, Tag tag)
         {
-            var q = from p in list
-                    where !p.Tags.Any(tp => tp.Id == tag.Id)
-                    select p.PeopleId;
-            foreach (var id in q)
-                tag.PersonTags.Add(new TagPerson { PeopleId = id });
+            var ft = PopulateTemporaryTag(list.Select(pp => pp.PeopleId));
+            AddTag1ToTag2(ft.Id, tag.Id);
             SubmitChanges();
         }
         public void TagAll2(IQueryable<Person> list, Tag tag)
@@ -460,8 +457,8 @@ namespace CmsData
             }
             s = Regex.Replace(s, @"^SELECT( DISTINCT| TOP \(\d+\))?", 
                 $"INSERT INTO TagPerson (Id, PeopleId) $0 {tag.Id},");
-
-            ExecuteCommand(s, plist.Select(pp => pp.Value).ToArray());
+            var args = plist.Select(pp => pp.Value).ToArray();
+            ExecuteCommand(s, args);
             return tag;
         }
         public Tag PopulateTempTag(IEnumerable<int> a)
@@ -1133,6 +1130,12 @@ namespace CmsData
             var result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), oid, pid, n, answer);
             return ((int)(result.ReturnValue));
         }
+        [Function(Name = "dbo.ArchiveContent")]
+        public int ArchiveContent([Parameter(DbType = "Int")] int? id)
+        {
+            var result = ExecuteMethodCall(this, (MethodInfo)(MethodBase.GetCurrentMethod()), id);
+            return (int)(result?.ReturnValue ?? 0);
+        }
         public IQueryable<View.OrgPerson> OrgPeople(int? oid, string sgfilter)
         {
             return OrgPeople(oid, GroupSelectCode.Member, null, null, sgfilter, false, false, false);
@@ -1147,7 +1150,7 @@ namespace CmsData
             )
         {
             return OrgPeople(oid, GroupSelectCode.Member, first, last, sgfilter, false,
-                Util2.CurrentTag, Util2.CurrentTagOwnerId, filterchecked,
+                Util2.CurrentTagName, Util2.CurrentTagOwnerId, filterchecked,
                 filtertag, null, Util.UserPeopleId);
         }
         public IQueryable<View.OrgPerson> OrgPeople(
@@ -1162,7 +1165,7 @@ namespace CmsData
             )
         {
             return OrgPeople(oid, grouptype, first, last, sgfilter, showhidden,
-                Util2.CurrentTag, Util2.CurrentTagOwnerId, filterchecked,
+                Util2.CurrentTagName, Util2.CurrentTagOwnerId, filterchecked,
                 filtertag, null, Util.UserPeopleId);
         }
         public OrganizationMember LoadOrgMember(int PeopleId, string OrgName, bool orgmustexist)
@@ -1283,6 +1286,10 @@ namespace CmsData
             SubmitChanges();
             return c;
         }
+        public Content Content(string name, int contentTypeId)
+        {
+            return Contents.FirstOrDefault(cc => cc.Name == name);
+        }
         public string Content2(string name, string defaultValue, int contentTypeId)
         {
             var c = Content(name, defaultValue, contentTypeId);
@@ -1316,6 +1323,50 @@ namespace CmsData
                 SubmitChanges();
             }
             return c.Id;
+        }
+        public int FetchOrCreatePositionId(string name)
+        {
+            if (!name.HasValue())
+                return 0;
+            var familyPosition = FamilyPositions.SingleOrDefault(pp => pp.Description == name);
+            if (familyPosition == null)
+            {
+                var max = FamilyPositions.Max(mm => mm.Id) + 10;
+                familyPosition = new FamilyPosition() { Id = max, Description = name, Code = name.Truncate(20) };
+                FamilyPositions.InsertOnSubmit(familyPosition);
+                SubmitChanges();
+            }
+            return familyPosition.Id;
+        }
+        public int FetchOrCreateRoleId(string name)
+        {
+            if (!name.HasValue())
+                return 0;
+            var role = Roles.SingleOrDefault(pp => pp.RoleName == name);
+            if (role == null)
+            {
+                var max = Roles.Max(mm => mm.RoleId) + 10;
+                role = new Role() { RoleId = max, RoleName = name };
+                Roles.InsertOnSubmit(role);
+                SubmitChanges();
+            }
+            return role.RoleId;
+        }
+        public int FetchOrCreateOrgTypeId(string name)
+        {
+            if (!name.HasValue())
+                return 0;
+            var orgtype = OrganizationTypes.SingleOrDefault(pp => pp.Description == name);
+            if (orgtype == null)
+            {
+                var nextid = OrganizationTypes.Any()
+                    ? OrganizationTypes.Max(mm => mm.Id) + 10
+                    : 10;
+                orgtype = new OrganizationType() { Id = nextid, Description = name, Code = name.Truncate(20) };
+                OrganizationTypes.InsertOnSubmit(orgtype);
+                SubmitChanges();
+            }
+            return orgtype.Id;
         }
 
         public ContributionFund FetchOrCreateFund(string Description)
@@ -1505,6 +1556,20 @@ namespace CmsData
             var result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), 
                 progid, divid, org, orgtype, days0, days, tagid);
             return ((int)(result.ReturnValue));
+        }
+        [Function(Name = "dbo.AddExtraValueData")]
+        public int AddExtraValueData(
+            [Parameter(DbType = "Int")] int? pid, 
+            [Parameter(DbType = "varchar(150)")] string field, 
+            [Parameter(DbType = "varchar(200)")] string strvalue, 
+            [Parameter(DbType = "datetime")] DateTime? datevalue, 
+            [Parameter(DbType = "varchar(max)")] string text, 
+            [Parameter(DbType = "Int")] int? intvalue, 
+            [Parameter(DbType = "Bit")] bool? bitvalue)
+        {
+            var result = ExecuteMethodCall(this, (MethodInfo)(MethodBase.GetCurrentMethod()), 
+                pid, field, strvalue, datevalue, text, intvalue, bitvalue );
+            return (int)(result?.ReturnValue ?? 0);
         }
     }
 }

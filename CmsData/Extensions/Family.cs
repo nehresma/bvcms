@@ -192,6 +192,19 @@ namespace CmsData
             }
             return ev;
         }
+
+        public void AddEditExtraValue(string field, string code, DateTime? date, string text, bool? bit, int? intn, DateTime? dt = null)
+        {
+            var ev = GetExtraValue(field);
+            ev.StrValue = code;
+            ev.Data = text;
+            ev.DateValue = date;
+            ev.IntValue = intn;
+            ev.BitValue = bit;
+            ev.UseAllValues = true;
+            ev.TransactionTime = dt ?? DateTime.Now;
+        }
+
         public void RemoveExtraValue(CMSDataContext db, string field)
         {
             var ev = FamilyExtras.AsEnumerable().FirstOrDefault(ee => string.Compare(ee.Field, field, ignoreCase: true) == 0);
@@ -204,7 +217,7 @@ namespace CmsData
             DbUtil.LogActivity($"EVFamily {op}:{field}");
         }
 
-        public void AddEditExtraValue(string field, string value)
+        public void AddEditExtraCode(string field, string value)
         {
             if (!field.HasValue())
                 return;
@@ -222,15 +235,15 @@ namespace CmsData
             ev.DateValue = value;
             ev.TransactionTime = DateTime.Now;
         }
-        public void AddEditExtraData(string field, string value)
+        public void AddEditExtraText(string field, string value, DateTime? dt = null)
         {
             if (!value.HasValue())
                 return;
             var ev = GetExtraValue(field);
             ev.Data = value;
-            ev.TransactionTime = DateTime.Now;
+            ev.TransactionTime = dt ?? DateTime.Now;
         }
-        public void AddToExtraData(string field, string value)
+        public void AddToExtraText(string field, string value)
         {
             if (!value.HasValue())
                 return;

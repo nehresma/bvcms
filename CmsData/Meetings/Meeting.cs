@@ -42,7 +42,7 @@ namespace CmsData
             oev.Data = value;
             oev.DataType = multiline ? "text" : null;
         }
-        public void AddToExtraData(string field, string value)
+        public void AddToExtraText(string field, string value)
         {
             if (!value.HasValue())
                 return;
@@ -87,7 +87,7 @@ namespace CmsData
             return meeting;
         }
 
-        public void AddEditExtraValue(string field, string value)
+        public void AddEditExtraCode(string field, string value)
         {
             if (!field.HasValue())
                 return;
@@ -98,13 +98,13 @@ namespace CmsData
             ev.TransactionTime = DateTime.Now;
         }
 
-        public void AddEditExtraData(string field, string value)
+        public void AddEditExtraText(string field, string value, DateTime? dt)
         {
             if (!value.HasValue())
                 return;
             var ev = GetExtraValue(field);
             ev.Data = value;
-            ev.TransactionTime = DateTime.Now;
+            ev.TransactionTime = dt ?? DateTime.Now;
         }
 
         public void AddEditExtraDate(string field, DateTime? value)
@@ -130,6 +130,18 @@ namespace CmsData
             var ev = GetExtraValue(field);
             ev.BitValue = tf;
             ev.TransactionTime = DateTime.Now;
+        }
+
+        public void AddEditExtraValue(string field, string code, DateTime? date, string text, bool? bit, int? intn, DateTime? dt = null)
+        {
+            var ev = GetExtraValue(field);
+            ev.StrValue = code;
+            ev.Data = text;
+            ev.DateValue = date;
+            ev.IntValue = intn;
+            ev.BitValue = bit;
+            ev.UseAllValues = true;
+            ev.TransactionTime = dt ?? DateTime.Now;
         }
 
         public void RemoveExtraValue(CMSDataContext db, string field)

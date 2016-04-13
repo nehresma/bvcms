@@ -1,0 +1,58 @@
+﻿@using CmsWeb.Areas.Reports.Models
+@{
+  var qid = ViewBag.queryid;
+  var oid = ViewBag.oid;
+  var m = new CustomReportsModel(DbUtil.Db, oid);
+  var custom = m.CustomList();
+  var sql = m.SqlList();
+  var python = m.PythonList();
+  ViewBag.ReportPageHeader = ViewBag.Name;
+  var canedit = User.IsInRole("Admin") || User.IsInRole("Design");
+}
+<ul class="dropdown-menu dropdown-menu-large dropdown-menu-right container bluebar-menu-col-3">
+  @if (sql.Count > 0)
+  {
+    <li class="col-sm-4">
+      <ul>
+        <li class="dropdown-header">SQL Reports</li>
+        @foreach (var r in sql)
+        {
+          <li>
+            <a target="_blank" href="/Reports/SqlReport/@r/@qid" class="qid">@r.Display</a>
+          </li>
+        }
+      </ul>
+    </li>
+  }
+  @if (python.Count > 0)
+  {
+    <li class="col-sm-4">
+      <ul>
+        <li class="dropdown-header">Python Scripts</li>
+        @foreach (var r in python)
+        {
+          <li>
+            <a target="_blank" href="/Reports/PyScript/@r/@qid" class="qid">@r.Display</a>
+          </li>
+        }
+      </ul>
+    </li>
+  }
+  <li class="col-sm-4">
+    <ul>
+      <li class="dropdown-header">Custom Reports</li>
+      @foreach (var r in custom)
+      {
+        <li>
+          <a target="_blank" href="/Reports/Custom/@r/@qid" class="qid">@r.Display</a>
+        </li>
+      }
+      @if (canedit)
+      {
+      <li>
+        <a href="@m.NewUrl(oid,qid)"><i class="fa fa-pencil"></i> New Custom Report</a>
+      </li>
+      }
+    </ul>
+  </li>
+</ul>

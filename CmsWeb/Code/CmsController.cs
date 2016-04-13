@@ -12,7 +12,6 @@ using CmsWeb.Code;
 using CmsWeb.Models;
 using Elmah;
 using OfficeOpenXml;
-using RegistrationSettingsParser;
 using UtilityExtensions;
 
 namespace CmsWeb
@@ -38,15 +37,16 @@ namespace CmsWeb
             if (AccountController.TryImpersonate())
             {
                 var returnUrl = Request.QueryString["returnUrl"];
-                filterContext.Result = Redirect(returnUrl.HasValue()
-                    ? returnUrl
-                    : Request.RawUrl);
+                if (returnUrl.HasValue() && Url.IsLocalUrl(returnUrl))
+                    filterContext.Result = Redirect(returnUrl);
+                else
+                    filterContext.Result = Redirect(Request.RawUrl);
             }
         }
 
-        public string AuthenticateDeveloper(bool log = false, string addrole = "")
+        public string AuthenticateDeveloper(bool log = false, string addrole = "", string altrole = "")
         {
-            return AuthHelper.AuthenticateDeveloper(System.Web.HttpContext.Current, log, addrole).Message;
+            return AuthHelper.AuthenticateDeveloper(System.Web.HttpContext.Current, log, addrole, altrole).Message;
         }
 
         public ViewResult Message(string text)
@@ -118,6 +118,14 @@ namespace CmsWeb
         public ViewResult Message(string text)
         {
             return View("Message", model: text);
+        }
+        public ViewResult PageMessage(string text, string title = "Error", string alert = "danger")
+        {
+            ViewBag.Title = title;
+            ViewBag.PageHeader = title;
+            ViewBag.Alert = alert;
+            ViewBag.Message = text;
+            return View("PageMessage");
         }
 
         public ViewResult Message2(string text)

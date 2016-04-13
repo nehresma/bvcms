@@ -1844,6 +1844,12 @@ namespace CmsData
 
         }
 
+        public Table< View.FirstAttend> ViewFirstAttends
+        {
+            get { return GetTable< View.FirstAttend>(); }
+
+        }
+
         public Table< View.FirstName> ViewFirstNames
         {
             get { return GetTable< View.FirstName>(); }
@@ -2596,6 +2602,21 @@ namespace CmsData
                 );
         }
 
+        [Function(Name="dbo.FamilyGiver", IsComposable = true)]
+        public IQueryable< View.FamilyGiver > FamilyGiver(
+            [Parameter(DbType="datetime")] DateTime? fd,
+            [Parameter(DbType="datetime")] DateTime? td,
+            [Parameter(DbType="int")] int? fundid
+            )
+        {
+            return CreateMethodCallQuery< View.FamilyGiver>(this,
+                ((MethodInfo)(MethodBase.GetCurrentMethod())),
+                    fd,
+                    td,
+                    fundid
+                );
+        }
+
         [Function(Name="dbo.FamilyMembers", IsComposable = true)]
         public IQueryable< View.FamilyMember > FamilyMembers(
             [Parameter(DbType="int")] int? pid
@@ -2784,6 +2805,21 @@ namespace CmsData
                 );
         }
 
+        [Function(Name="dbo.GetPledgedTotalsBothIfJoint", IsComposable = true)]
+        public IQueryable< View.GetPledgedTotalsBothIfJoint > GetPledgedTotalsBothIfJoint(
+            [Parameter(DbType="datetime")] DateTime? startdt,
+            [Parameter(DbType="datetime")] DateTime? enddt,
+            [Parameter(DbType="int")] int? fundid
+            )
+        {
+            return CreateMethodCallQuery< View.GetPledgedTotalsBothIfJoint>(this,
+                ((MethodInfo)(MethodBase.GetCurrentMethod())),
+                    startdt,
+                    enddt,
+                    fundid
+                );
+        }
+
         [Function(Name="dbo.GetTodaysMeetingHours", IsComposable = true)]
         public IQueryable< View.GetTodaysMeetingHour > GetTodaysMeetingHours(
             [Parameter(DbType="int")] int? orgid,
@@ -2931,6 +2967,23 @@ namespace CmsData
                 );
         }
 
+        [Function(Name="dbo.GetTotalPledgesDonor2", IsComposable = true)]
+        public IQueryable< View.GetTotalPledgesDonor2 > GetTotalPledgesDonor2(
+            [Parameter(DbType="datetime")] DateTime? fd,
+            [Parameter(DbType="datetime")] DateTime? td,
+            [Parameter(DbType="int")] int? campusid,
+            [Parameter(DbType="int")] int? pledgefund
+            )
+        {
+            return CreateMethodCallQuery< View.GetTotalPledgesDonor2>(this,
+                ((MethodInfo)(MethodBase.GetCurrentMethod())),
+                    fd,
+                    td,
+                    campusid,
+                    pledgefund
+                );
+        }
+
         [Function(Name="dbo.GivingChange", IsComposable = true)]
         public IQueryable< View.GivingChange > GivingChange(
             [Parameter(DbType="int")] int? days
@@ -3025,16 +3078,12 @@ namespace CmsData
 
         [Function(Name="dbo.LastMeetings", IsComposable = true)]
         public IQueryable< View.LastMeeting > LastMeetings(
-            [Parameter(DbType="int")] int? orgid,
-            [Parameter(DbType="int")] int? divid,
-            [Parameter(DbType="int")] int? days
+            [Parameter(DbType="varchar")] string orgs
             )
         {
             return CreateMethodCallQuery< View.LastMeeting>(this,
                 ((MethodInfo)(MethodBase.GetCurrentMethod())),
-                    orgid,
-                    divid,
-                    days
+                    orgs
                 );
         }
 
@@ -3734,6 +3783,17 @@ namespace CmsData
                 );
         }
 
+        [Function(Name="dbo.RegistrationSmallGroups", IsComposable = true)]
+        public IQueryable< View.RegistrationSmallGroup > RegistrationSmallGroups(
+            [Parameter(DbType="int")] int? orgid
+            )
+        {
+            return CreateMethodCallQuery< View.RegistrationSmallGroup>(this,
+                ((MethodInfo)(MethodBase.GetCurrentMethod())),
+                    orgid
+                );
+        }
+
         [Function(Name="dbo.RollList", IsComposable = true)]
         public IQueryable< View.RollList > RollList(
             [Parameter(DbType="int")] int? mid,
@@ -4159,6 +4219,18 @@ namespace CmsData
             return ((string)(ExecuteMethodCall(this,
                 ((MethodInfo)(MethodBase.GetCurrentMethod())),
                     id
+                ).ReturnValue));
+        }
+
+        [Function(Name="dbo.CompactAttendHistory", IsComposable = true)]
+        [return: Parameter(DbType = "varchar")]
+        public string CompactAttendHistory(
+            [Parameter(Name = "pid", DbType="int")] int? pid
+            )
+        {
+            return ((string)(ExecuteMethodCall(this,
+                ((MethodInfo)(MethodBase.GetCurrentMethod())),
+                    pid
                 ).ReturnValue));
         }
 

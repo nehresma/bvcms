@@ -97,8 +97,8 @@ namespace CmsData
             var q = db.RecentGiver(Days).Select(v => v.PeopleId.Value);
             var tag = db.PopulateTemporaryTag(q);
             Expression<Func<Person, bool>> pred = p => op == CompareType.Equal && tf
-                ? p.Tags.Any(t => t.Id == tag.Id)
-                : p.Tags.All(t => t.Id != tag.Id);
+                ? db.TagPeople.Where(vv => vv.Id == tag.Id).Select(vv => vv.PeopleId).Contains(p.PeopleId)
+                : !db.TagPeople.Where(vv => vv.Id == tag.Id).Select(vv => vv.PeopleId).Contains(p.PeopleId);
 
             Expression expr = Expression.Invoke(pred, parm);
             return expr;
@@ -301,23 +301,90 @@ namespace CmsData
                         select c.PeopleId.Value;
                     break;
                 case CompareType.Equal:
-                    if (amt == 0) // This is a very special case, use different approach
-                    {
+                    if (amt == 0)
                         q = from pid in db.Contributions0(startdt, enddt, 0, 0, false, false, true)
                             select pid.PeopleId;
-                        Expression<Func<Person, bool>> pred0 = p => q.Contains(p.PeopleId);
-                        Expression expr0 = Expression.Invoke(pred0, parm);
-                        return expr0;
-                    }
-                    q = from c in db.GetContributionTotalsBothIfJoint(startdt, enddt)
-                        where c.Amount > 0
-                        where c.Amount == amt
-                        select c.PeopleId.Value;
+                    else
+                        q = from c in db.GetContributionTotalsBothIfJoint(startdt, enddt)
+                            where c.Amount > 0
+                            where c.Amount == amt
+                            select c.PeopleId.Value;
                     break;
                 case CompareType.NotEqual:
                     q = from c in db.GetContributionTotalsBothIfJoint(startdt, enddt)
                         where c.Amount > 0
                         where c.Amount != amt
+                        select c.PeopleId.Value;
+                    break;
+            }
+            var tag = db.PopulateTemporaryTag(q);
+            Expression<Func<Person, bool>> pred = p => p.Tags.Any(t => t.Id == tag.Id);
+            Expression expr = Expression.Invoke(pred, parm);
+            return expr;
+        }
+        internal Expression RecentPledgeAmountBothJoint()
+        {
+            var now = DateTime.Now;
+            var dt = now.AddDays(-Days);
+            return PledgeAmountBothJoint(dt, now);
+        }
+        internal Expression PledgeAmountBothJointHistory()
+        {
+            DateTime? enddt = null;
+            if (!EndDate.HasValue && StartDate.HasValue)
+                    enddt = StartDate.Value.AddHours(24);
+            if(EndDate.HasValue)
+                enddt = EndDate.Value.AddHours(24);
+            return PledgeAmountBothJoint(StartDate, enddt);
+
+        }
+        private Expression PledgeAmountBothJoint(DateTime? startdt, DateTime? enddt)
+        {
+            if (!db.FromBatch)
+                if (db.CurrentUser == null || db.CurrentUser.Roles.All(rr => rr != "Finance"))
+                    return AlwaysFalse();
+            var amt = decimal.Parse(TextValue);
+            var fund = Quarters.ToInt2();
+
+            IQueryable<int> q = null;
+            switch (op)
+            {
+                case CompareType.Greater:
+                    q = from c in db.GetPledgedTotalsBothIfJoint(startdt, enddt, fund)
+                        where c.PledgeAmount > amt
+                        select c.PeopleId.Value;
+                    break;
+                case CompareType.GreaterEqual:
+                    q = from c in db.GetPledgedTotalsBothIfJoint(startdt, enddt, fund)
+                        where c.PledgeAmount.Value >= amt
+                        select c.PeopleId.Value;
+                    break;
+                case CompareType.Less:
+                    q = from c in db.GetPledgedTotalsBothIfJoint(startdt, enddt, fund)
+                        where c.PledgeAmount.Value > 0
+                        where c.PledgeAmount.Value <= amt
+                        select c.PeopleId.Value;
+                    break;
+                case CompareType.LessEqual:
+                    q = from c in db.GetPledgedTotalsBothIfJoint(startdt, enddt, fund)
+                        where c.PledgeAmount.Value > 0
+                        where c.PledgeAmount.Value <= amt
+                        select c.PeopleId.Value;
+                    break;
+                case CompareType.Equal:
+                    if (amt == 0)
+                        q = from pid in db.Pledges0(startdt, enddt, fund, 0)
+                            select pid.PeopleId;
+                    else
+                        q = from c in db.GetPledgedTotalsBothIfJoint(startdt, enddt, fund)
+                            where c.PledgeAmount.Value > 0
+                            where c.PledgeAmount.Value == amt
+                            select c.PeopleId.Value;
+                    break;
+                case CompareType.NotEqual:
+                    q = from c in db.GetPledgedTotalsBothIfJoint(startdt, enddt, fund)
+                        where c.PledgeAmount.Value > 0
+                        where c.PledgeAmount.Value != amt
                         select c.PeopleId.Value;
                     break;
             }
@@ -607,6 +674,36 @@ namespace CmsData
             }
             var tag = db.PopulateTemporaryTag(q.Select(pp => pp.PeopleId));
             Expression<Func<Person, bool>> pred = p => p.Tags.Any(t => t.Id == tag.Id);
+            Expression expr = Expression.Invoke(pred, parm);
+            return expr;
+        }
+        internal Expression IsFamilyGiver()
+        {
+            var tf = CodeIds == "1";
+            var fundid = Quarters.ToInt2();
+            var td = DateTime.Now;
+            var fd = td.AddDays(Days == 0 ? -365 : -Days);
+            var q = db.FamilyGiver(fd, td, fundid).Where(vv => vv.FamGive == true);
+            var tag = db.PopulateTemporaryTag(q.Select(pp => pp.PeopleId));
+
+            Expression<Func<Person, bool>> pred = p => op == CompareType.Equal && tf
+                ? db.TagPeople.Where(vv => vv.Id == tag.Id).Select(vv => vv.PeopleId).Contains(p.PeopleId)
+                : !db.TagPeople.Where(vv => vv.Id == tag.Id).Select(vv => vv.PeopleId).Contains(p.PeopleId);
+
+            Expression expr = Expression.Invoke(pred, parm);
+            return expr;
+        }
+        internal Expression IsFamilyPledger()
+        {
+            var tf = CodeIds == "1";
+            var fundid = Quarters.ToInt2();
+            var td = DateTime.Now;
+            var fd = td.AddDays(Days == 0 ? -365 : -Days);
+            var q = db.FamilyGiver(fd, td, fundid).Where(vv => vv.FamPledge == true);
+            var tag = db.PopulateTemporaryTag(q.Select(pp => pp.PeopleId));
+            Expression<Func<Person, bool>> pred = p => op == CompareType.Equal && tf
+                ? db.TagPeople.Where(vv => vv.Id == tag.Id).Select(vv => vv.PeopleId).Contains(p.PeopleId)
+                : !db.TagPeople.Where(vv => vv.Id == tag.Id).Select(vv => vv.PeopleId).Contains(p.PeopleId);
             Expression expr = Expression.Invoke(pred, parm);
             return expr;
         }

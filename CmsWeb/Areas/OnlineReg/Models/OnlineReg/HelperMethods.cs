@@ -11,6 +11,8 @@ using System.Text.RegularExpressions;
 using CmsData.Codes;
 using CmsData.View;
 using CmsWeb.Areas.Search.Models;
+using DocumentFormat.OpenXml.Bibliography;
+using Person = CmsData.Person;
 
 namespace CmsWeb.Areas.OnlineReg.Models
 {
@@ -200,6 +202,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         {
             return masterorgid.HasValue && masterorg.RegistrationTypeId == RegistrationTypeCode.ManageSubscriptions;
         }
+
         public bool RegisterLinkMaster()
         {
             return org != null && org.RegistrationTypeId == RegistrationTypeCode.RegisterLinkMaster;
@@ -241,12 +244,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 return false;
             return settings.Values.Any(o => o.AskDonation);
         }
+
         public bool AllowSaveProgress()
         {
             if (UserPeopleId == null)
                 return false;
             return SaveProgressChecked();
         }
+
         public bool SaveProgressChecked()
         {
             if (org != null)
@@ -268,20 +273,20 @@ namespace CmsWeb.Areas.OnlineReg.Models
             get
             {
                 if (masterorgid.HasValue)
-                    return masterorg.OrganizationName;
+                    return masterorg.Title;
                 if (SupportMissionTrip)
                 {
                     if (GoerId.HasValue)
                     {
                         var g = DbUtil.Db.LoadPersonById(GoerId.Value);
                         if (g != null)
-                            return $"Support: {org.OrganizationName} ({g.Name})";
+                            return $"Support: {org.Title} ({g.Name})";
                     }
-                    return "Support: " + org.OrganizationName;
+                    return "Support: " + org.Title;
                 }
                 if (settings != null && org != null && settings.ContainsKey(org.OrganizationId))
-                    return Util.PickFirst(org.RegistrationTitle, org.OrganizationName);
-                return org.OrganizationName;
+                    return org.Title;
+                return org == null ? "Missing Org" : org.Title;
             }
         }
 
@@ -298,8 +303,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
                             var accountcode = settings[masterorgid.Value].AccountingCode;
                             if (accountcode.HasValue())
                                 return $"{masterorg.OrganizationName} ({accountcode})";
+                            return masterorg.OrganizationName;
                         }
-                        return masterorg.OrganizationName;
                     }
                     catch (Exception)
                     {
@@ -317,10 +322,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     var accountcode = settings[org.OrganizationId].AccountingCode;
                     if (accountcode.HasValue())
                         return $"{org.OrganizationName} ({accountcode})";
-
                     return org.OrganizationName;
                 }
-                return org.OrganizationName;
+                return org?.OrganizationName ?? "no org";
             }
         }
 
@@ -401,6 +405,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 return "";
             }
         }
+
         public string TrackingCode
         {
             get
@@ -471,9 +476,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 msg = Util.PickFirst(setting.ThankYouMessage, def);
             }
             msg = msg.Replace("{org}", Header)
-                .Replace("{email}", Util.ObscureEmail(email))
-                .Replace("{url}", URL)
-                .Replace(WebUtility.UrlEncode("{url}"), URL);
+                     .Replace("{email}", Util.ObscureEmail(email))
+                     .Replace("{url}", URL)
+                     .Replace(WebUtility.UrlEncode("{url}"), URL);
             return msg;
         }
 
@@ -503,6 +508,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         }
 
         private int? timeOut;
+
         public int TimeOut
         {
             get
@@ -597,12 +603,12 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 ? GetRegistrationFromDatum(ed.Id)
                 : null;
         }
+
 #if DEBUG
         public void DebugCleanUp()
         {
-
             var q = from om in DbUtil.Db.OrganizationMembers
-                    where new [] { 828612, Util.UserPeopleId }.Contains(om.PeopleId)
+                    where new[] {828612, Util.UserPeopleId}.Contains(om.PeopleId)
                     where om.OrganizationId == Orgid
                     select om;
             foreach (var om in q)
@@ -635,6 +641,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             //");
         }
 #endif
+
         public void CancelRegistrant(int n)
         {
             HistoryAdd("Cancel id=" + n);
@@ -652,13 +659,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
 #endif
                 });
         }
+
         public bool RegistrantComplete
         {
             get
             {
                 return last != null
-                    && last.QuestionsOK
-                    && last.FinishedFindingOrAddingRegistrant;
+                       && last.QuestionsOK
+                       && last.FinishedFindingOrAddingRegistrant;
             }
         }
 
@@ -669,6 +677,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 pid = List[0].PeopleId;
             DbUtil.LogActivity("OnlineReg " + action, masterorgid ?? Orgid, UserPeopleId ?? pid, DatumId);
         }
+
         internal void StartOver()
         {
             HistoryAdd("startover");

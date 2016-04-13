@@ -40,6 +40,10 @@ namespace CmsData
 		
 		private string _Type;
 		
+		private bool? _UseAllValues;
+		
+		private int _Instance;
+		
    		
     	
 		private EntityRef< Person> _Person;
@@ -83,6 +87,12 @@ namespace CmsData
 		
 		partial void OnTypeChanging(string value);
 		partial void OnTypeChanged();
+		
+		partial void OnUseAllValuesChanging(bool? value);
+		partial void OnUseAllValuesChanged();
+		
+		partial void OnInstanceChanging(int value);
+		partial void OnInstanceChanged();
 		
     #endregion
 		public PeopleExtra()
@@ -336,6 +346,50 @@ namespace CmsData
 					this._Type = value;
 					this.SendPropertyChanged("Type");
 					this.OnTypeChanged();
+				}
+
+			}
+
+		}
+
+		
+		[Column(Name="UseAllValues", UpdateCheck=UpdateCheck.Never, Storage="_UseAllValues", DbType="bit")]
+		public bool? UseAllValues
+		{
+			get { return this._UseAllValues; }
+
+			set
+			{
+				if (this._UseAllValues != value)
+				{
+				
+                    this.OnUseAllValuesChanging(value);
+					this.SendPropertyChanging();
+					this._UseAllValues = value;
+					this.SendPropertyChanged("UseAllValues");
+					this.OnUseAllValuesChanged();
+				}
+
+			}
+
+		}
+
+		
+		[Column(Name="Instance", UpdateCheck=UpdateCheck.Never, Storage="_Instance", DbType="int NOT NULL", IsPrimaryKey=true)]
+		public int Instance
+		{
+			get { return this._Instance; }
+
+			set
+			{
+				if (this._Instance != value)
+				{
+				
+                    this.OnInstanceChanging(value);
+					this.SendPropertyChanging();
+					this._Instance = value;
+					this.SendPropertyChanged("Instance");
+					this.OnInstanceChanged();
 				}
 
 			}

@@ -61,6 +61,11 @@ namespace CmsWeb.Areas.Public.Controllers
             };
             DbUtil.Db.OneTimeLinks.InsertOnSubmit(ot);
             DbUtil.Db.SubmitChanges();
+
+            var b = DbUtil.Db.ServerLink();
+            if(url.StartsWith(b))
+            	url = url.Substring(b.Length - (b.EndsWith("/") ? 1 : 0));
+
             return $"{Util.CmsHost2}Logon?ReturnUrl={HttpUtility.UrlEncode(url)}&otltoken={ot.Id.ToCode()}";
         }
 
@@ -98,7 +103,7 @@ namespace CmsWeb.Areas.Public.Controllers
         [HttpPost]
         public ActionResult AddEditExtraValue(int peopleid, string field, string value, string type = "data")
         {
-            var ret = AuthenticateDeveloper();
+            var ret = AuthenticateDeveloper(altrole: "Checkin");
             if (ret.StartsWith("!"))
                 return Content(ret.Substring(1));
             DbUtil.LogActivity($"APIPerson AddExtraValue {peopleid}, {field}");

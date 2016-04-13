@@ -962,6 +962,23 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
                 return canUserSeeGiving.Value;
             }
         }
+        private bool? canUserSeeEmails;
+        public bool CanUserSeeEmails
+        {
+            get
+            {
+                if (!canUserSeeEmails.HasValue)
+                {
+                    var sameperson = Util.UserPeopleId == PeopleId;
+                    var ishead = (new int?[] {
+                        Family.HeadOfHouseholdId,
+                        Family.HeadOfHouseholdSpouseId })
+                        .Contains(Util.UserPeopleId);
+                    canUserSeeEmails = sameperson || ishead || HttpContext.Current.User.IsInRole("Access");
+                }
+                return canUserSeeEmails.Value;
+            }
+        }
 
         public RecReg GetRecReg()
         {
@@ -1132,7 +1149,7 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
             DbUtil.LogActivity($"EV {op}:{field}", peopleid: PeopleId);
         }
 
-        public void AddEditExtraValue(string field, string value)
+        public void AddEditExtraCode(string field, string value)
         {
             if (!field.HasValue())
                 return;
@@ -1150,15 +1167,7 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
             ev.DateValue = value;
             ev.TransactionTime = DateTime.Now;
         }
-        public void AddEditExtraData(string field, string value)
-        {
-            if (!value.HasValue())
-                return;
-            var ev = GetExtraValue(field);
-            ev.Data = value;
-            ev.TransactionTime = DateTime.Now;
-        }
-        public void AddEditExtraData(string field, string value, DateTime? dt)
+        public void AddEditExtraText(string field, string value, DateTime? dt = null)
         {
             if (!value.HasValue())
                 return;
@@ -1166,7 +1175,7 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
             ev.Data = value;
             ev.TransactionTime = dt ?? DateTime.Now;
         }
-        public void AddToExtraData(string field, string value)
+        public void AddToExtraText(string field, string value)
         {
             if (!value.HasValue())
                 return;
@@ -1198,9 +1207,19 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
             ev.IntValue2 = value2;
             ev.TransactionTime = DateTime.Now;
         }
+        public void AddEditExtraValue(string field, string code, DateTime? date ,string text, bool? bit, int? intn, DateTime? dt = null)
+        {
+            var ev = GetExtraValue(field);
+            ev.StrValue = code;
+            ev.Data = text;
+            ev.DateValue = date;
+            ev.IntValue = intn;
+            ev.BitValue = bit;
+            ev.UseAllValues = true;
+            ev.TransactionTime = dt ?? DateTime.Now;
+        }
         public static PeopleExtra GetExtraValue(CMSDataContext db, int id, string field)
         {
-            //field = field.Replace('/', '-');
             var q = from v in db.PeopleExtras
                     where v.Field == field
                     where v.PeopleId == id
@@ -1220,7 +1239,6 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
         }
         public static bool ExtraValueExists(CMSDataContext db, int id, string field)
         {
-            //field = field.Replace('/', '-');
             var q = from v in db.PeopleExtras
                     where v.Field == field
                     where v.PeopleId == id
@@ -1247,13 +1265,13 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
             ev.StrValue = value;
             ev.TransactionTime = DateTime.Now;
         }
-        public static void AddEditExtraData(CMSDataContext db, int id, string field, string value)
+        public static void AddEditExtraData(CMSDataContext db, int id, string field, string value, DateTime? dt = null)
         {
             if (!value.HasValue())
                 return;
             var ev = GetExtraValue(db, id, field);
             ev.Data = value;
-            ev.TransactionTime = DateTime.Now;
+            ev.TransactionTime = dt ?? DateTime.Now;
         }
         public static void AddEditExtraDate(CMSDataContext db, int id, string field, DateTime? value)
         {
@@ -1429,6 +1447,18 @@ UPDATE dbo.GoerSenderAmounts SET SupporterId = {1} WHERE SupporterId = {0}", Peo
                 var max = db.JoinTypes.Max(mm => mm.Id) + 1;
                 ms = new JoinType() { Id = max, Code = "J" + max, Description = status };
                 db.JoinTypes.InsertOnSubmit(ms);
+                db.SubmitChanges();
+            }
+            return ms.Id;
+        }
+        public static int FetchOrCreateMaritalStatusId(CMSDataContext db, string status)
+        {
+            var ms = db.MaritalStatuses.SingleOrDefault(m => m.Description == status);
+            if (ms == null)
+            {
+                var max = db.MaritalStatuses.Max(mm => mm.Id) + 1;
+                ms = new MaritalStatus() { Id = max, Code = "M" + max, Description = status };
+                db.MaritalStatuses.InsertOnSubmit(ms);
                 db.SubmitChanges();
             }
             return ms.Id;

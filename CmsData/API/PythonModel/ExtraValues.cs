@@ -83,6 +83,8 @@ namespace CmsData
                         return ev.BitValue.ToString();
                     case "Int":
                         return ev.IntValue.ToString();
+                    case "Data":
+                        return $"{ev.StrValue};{ev.DateValue.FormatDate()};{ev.BitValue};{ev.IntValue};{ev.Data}";
                     default:
                         return $"unknown type: {ev.Type}";
                 }
@@ -124,6 +126,19 @@ namespace CmsData
             if (ev != null)
                 return ev.Data ?? "";
             return "";
+        }
+
+        public void DeleteExtraValue(object query, string name)
+        {
+            var list = db.PeopleQuery2(query).Select(ii => ii.PeopleId).ToList();
+            foreach (var pid in list)
+            {
+                var db2 = NewDataContext();
+                var ev = Person.GetExtraValue(db2, pid, name);
+                db2.PeopleExtras.DeleteOnSubmit(ev);
+                db2.SubmitChanges();
+                db2.Dispose();
+            }
         }
     }
 }
