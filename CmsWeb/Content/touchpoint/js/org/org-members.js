@@ -7,6 +7,8 @@
         $.post("/OrgMembers/List", q, function (ret) {
             $(f).html(ret).ready(function () {
                 $.unblock();
+                // Enable the popover help
+                $('[data-toggle="popover"]').popover({ html: true });
             });
         });
     };
@@ -32,6 +34,8 @@
                     text: "Move completed.",
                     type: "success"
                 });
+                // Enable the popover help
+                $('[data-toggle="popover"]').popover({ html: true });
             });
         });
     });
@@ -65,6 +69,8 @@
                     text: "Email notices sent.",
                     type: "success"
                 });
+                // Enable the popover help
+                $('[data-toggle="popover"]').popover({ html: true });
             });
         });
         return false;
@@ -81,6 +87,8 @@
                     text: "Email notices reset.",
                     type: "success"
                 });
+                // Enable the popover help
+                $('[data-toggle="popover"]').popover({ html: true });
             });
         });
         return false;
