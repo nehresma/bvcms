@@ -100,6 +100,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var mindate = DateTime.Parse("1/1/1753");
             var HasOneOfThreeRequired = false;
 
+            DateTime dt;
+            if (DateOfBirth.HasValue() && !Util.BirthDateValid(bmon, bday, byear, out dt))
+                modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].DateOfBirth), "birthday invalid");
+
             if (BestBirthday.HasValue && BestBirthday < mindate)
                 modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].DateOfBirth), "invalid date");
 
@@ -153,9 +157,15 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         private void ValidateBirthdayRange(bool selectFromFamily)
         {
-            if (org == null)
+            if (ManageSubscriptions())
                 return;
-            if (!BestBirthday.HasValue && (org.BirthDayStart.HasValue || org.BirthDayEnd.HasValue))
+            if (org == null)
+            {
+                NoAppropriateOrgError = "No Appropriate Org Found";
+                modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].DateOfBirth), NoAppropriateOrgError);
+                Log("No appropriate org");
+            }
+            else if (!BestBirthday.HasValue && (org.BirthDayStart.HasValue || org.BirthDayEnd.HasValue))
             {
                 modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].DateOfBirth), "birthday required");
                 RegistrantProblem = @"**Birthday is required for this registration**";
@@ -225,16 +235,17 @@ Please call the church to resolve this before we can complete your information."
             return true;
         }
 
-        private bool NoAppropriateOrgFound(bool selectFromFamily)
+        private bool NoAppropriateOrgFound(bool selectFromFamily = false)
         {
             if (!ComputesOrganizationByAge() || org != null)
                 return false;
-            var msg = NoAppropriateOrgError ?? "Sorry, no approprate org";
+            NoAppropriateOrgError = "Sorry, cannot find an appropriate age group";
+            RegistrantProblem = NoAppropriateOrgError;
             Log("NoAppropriateOrg");
             if (selectFromFamily)
-                modelState.AddModelError("fammember-" + person.PeopleId, msg);
+                modelState.AddModelError("fammember-" + person.PeopleId, NoAppropriateOrgError);
             else
-                modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].DateOfBirth), msg);
+                modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].DateOfBirth), NoAppropriateOrgError);
             IsValidForContinue = false;
             IsValidForExisting = false;
             return true;

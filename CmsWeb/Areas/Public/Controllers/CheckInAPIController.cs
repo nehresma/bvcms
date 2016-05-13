@@ -376,6 +376,63 @@ namespace CmsWeb.Areas.Public.Controllers
         }
 
         [HttpPost]
+        public ActionResult SaveFamilyImage(string data)
+        {
+            // Authenticate first
+            if (!Auth())
+                return BaseMessage.createErrorReturn("Authentication failed, please try again", BaseMessage.API_ERROR_INVALID_CREDENTIALS);
+
+            BaseMessage dataIn = BaseMessage.createFromString(data);
+            CheckInSaveImage cisi = JsonConvert.DeserializeObject<CheckInSaveImage>(dataIn.data);
+
+            BaseMessage br = new BaseMessage();
+
+            var imageBytes = Convert.FromBase64String(cisi.image);
+
+            var family = DbUtil.Db.Families.SingleOrDefault(pp => pp.FamilyId == cisi.id);
+
+            if (family.Picture != null)
+            {
+                if (ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.ThumbId) != null)
+                    ImageData.DbUtil.Db.Images.DeleteOnSubmit(ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.ThumbId));
+
+                if (ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.ThumbId) != null)
+                    ImageData.DbUtil.Db.Images.DeleteOnSubmit(ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.SmallId));
+
+                if (ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.ThumbId) != null)
+                    ImageData.DbUtil.Db.Images.DeleteOnSubmit(ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.MediumId));
+
+                if (ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.ThumbId) != null)
+                    ImageData.DbUtil.Db.Images.DeleteOnSubmit(ImageData.DbUtil.Db.Images.SingleOrDefault(i => i.Id == family.Picture.LargeId));
+
+                family.Picture.ThumbId = ImageData.Image.NewImageFromBits(imageBytes, 50, 50).Id;
+                family.Picture.SmallId = ImageData.Image.NewImageFromBits(imageBytes, 120, 120).Id;
+                family.Picture.MediumId = ImageData.Image.NewImageFromBits(imageBytes, 320, 400).Id;
+                family.Picture.LargeId = ImageData.Image.NewImageFromBits(imageBytes).Id;
+            }
+            else
+            {
+                var newPicture = new Picture();
+
+                newPicture.ThumbId = ImageData.Image.NewImageFromBits(imageBytes, 50, 50).Id;
+                newPicture.SmallId = ImageData.Image.NewImageFromBits(imageBytes, 120, 120).Id;
+                newPicture.MediumId = ImageData.Image.NewImageFromBits(imageBytes, 320, 400).Id;
+                newPicture.LargeId = ImageData.Image.NewImageFromBits(imageBytes).Id;
+
+                family.Picture = newPicture;
+            }
+
+            DbUtil.Db.SubmitChanges();
+
+            br.setNoError();
+            br.data = "Image updated.";
+            br.id = cisi.id;
+            br.count = 1;
+
+            return br;
+        }
+
+        [HttpPost]
         public ActionResult AddEditPerson(string data)
         {
             // Authenticate first
@@ -418,6 +475,10 @@ namespace CmsWeb.Areas.Public.Controllers
                 p.AddressTypeId = 10;
 
                 p.OriginId = OriginCode.Visit;
+                p.EntryPoint = getCheckInEntryPointID();
+
+                if (aep.campus > 0)
+                    p.CampusId = aep.campus;
 
                 p.Name = "";
 
@@ -448,6 +509,13 @@ namespace CmsWeb.Areas.Public.Controllers
             p.FirstName = aep.firstName;
             p.LastName = aep.lastName;
             p.NickName = aep.goesBy;
+
+            if (aep.birthday != null)
+            {
+                p.BirthDay = aep.birthday.Value.Day;
+                p.BirthMonth = aep.birthday.Value.Month;
+                p.BirthYear = aep.birthday.Value.Year;
+            }
 
             p.PositionInFamilyId = DbUtil.Db.ComputePositionInFamily(aep.getAge(), aep.maritalStatusID == MaritalStatusCode.Married, f.FamilyId) ?? PositionInFamily.PrimaryAdult;
 
@@ -480,6 +548,33 @@ namespace CmsWeb.Areas.Public.Controllers
             br.data = SerializeJSON(results, dataIn.version);
 
             return br;
+        }
+
+        private EntryPoint getCheckInEntryPointID()
+        {
+            var checkInEntryPoint = (from e in DbUtil.Db.EntryPoints
+                                     where e.Code == "CHECKIN"
+                                     select e).FirstOrDefault();
+
+            if (checkInEntryPoint != null)
+            {
+                return checkInEntryPoint;
+            }
+            else
+            {
+                int maxEntryPointID = DbUtil.Db.EntryPoints.Max(e => e.Id);
+
+                EntryPoint entry = new EntryPoint();
+                entry.Id = maxEntryPointID + 1;
+                entry.Code = "CHECKIN";
+                entry.Description = "Check-In";
+                entry.Hardwired = true;
+
+                DbUtil.Db.EntryPoints.InsertOnSubmit(entry);
+                DbUtil.Db.SubmitChanges();
+
+                return entry;
+            }
         }
 
         [HttpPost]
@@ -521,6 +616,15 @@ namespace CmsWeb.Areas.Public.Controllers
 
             DbUtil.Db.UpdateMeetingCounters(cia.orgID);
             DbUtil.LogActivity($"Check-In Record Attend Org ID:{meeting.OrganizationId} People ID:{cia.peopleID} User ID:{Util.UserPeopleId} Attended:{cia.present}");
+
+            // Check Entry Point and replace if Check-In
+            Person person = DbUtil.Db.People.Where(p => p.PeopleId == cia.peopleID).FirstOrDefault();
+
+            if (person != null && person.EntryPoint != null && person.EntryPoint.Code != null && person.EntryPoint.Code == "CHECKIN" && meeting != null)
+            {
+                person.EntryPoint = meeting.Organization.EntryPoint;
+                DbUtil.Db.SubmitChanges();
+            }
 
             BaseMessage br = new BaseMessage();
             br.setNoError();
@@ -667,6 +771,15 @@ namespace CmsWeb.Areas.Public.Controllers
             }
 
             DbUtil.Db.SubmitChanges();
+
+            // Check Entry Point and replace if Check-In
+            Person person = DbUtil.Db.People.Where(p => p.PeopleId == cjo.peopleID).FirstOrDefault();
+
+            if (person != null && person.EntryPoint.Code == "CHECKIN" && om != null)
+            {
+                person.EntryPoint = om.Organization.EntryPoint;
+                DbUtil.Db.SubmitChanges();
+            }
 
             BaseMessage br = new BaseMessage();
             br.setNoError();

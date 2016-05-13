@@ -5,7 +5,6 @@ using System.Web;
 using System.Web.Mvc;
 using CmsData;
 using CmsData.Finance;
-using CmsData.Registration;
 using CmsWeb.Code;
 using Elmah;
 using UtilityExtensions;
@@ -16,6 +15,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
     {
         private bool? _noEChecksAllowed;
         private int? timeOut;
+        public string source { get; set; }
         public decimal? AmtToPay { get; set; }
         public decimal? Donate { get; set; }
         public decimal Amtdue { get; set; }
@@ -30,6 +30,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
         ///     "B" for e-check and "C" for credit card, see PaymentType
         /// </summary>
         public string Type { get; set; }
+
+        public string Checked(string type) => $"value={type} {(Type==type ? "checked=checked" : "")}";
+        public string Active(string type) => Type==type ? "active" : "";
 
         public bool AskDonation { get; set; }
         public bool AllowCoupon { get; set; }
@@ -64,6 +67,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
         public bool? AllowSaveProgress { get; set; }
         public bool? IsGiving { get; set; }
         public bool NoCreditCardsAllowed { get; set; }
+        public bool NeedsCityState { get; set; }
+        public int? CampusId { get; set; }
+        public bool ShowCampusOnePageGiving => DbUtil.Db.Setting("ShowCampusOnRegistration", "false").ToBool();
 
         public bool NoEChecksAllowed
         {
@@ -82,6 +88,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         public string State { get; set; }
         public string Zip { get; set; }
         public string Country { get; set; }
+        public bool IsUs => Country == "United States" || !Country.HasValue();
 
         public IEnumerable<SelectListItem> Countries
         {
@@ -92,6 +99,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 return list;
             }
         }
+        public List<SelectListItem> Campuses;
 
         public string Phone { get; set; }
         public int? TranId { get; set; }
@@ -291,7 +299,11 @@ namespace CmsWeb.Areas.OnlineReg.Models
             pf.NoCreditCardsAllowed = m.NoCreditCardsAllowed();
             if (m.OnlineGiving())
             {
+#if DEBUG
+                pf.NoCreditCardsAllowed = false;
+#else
                 pf.NoCreditCardsAllowed = DbUtil.Db.Setting("NoCreditCardGiving", "false").ToBool();
+#endif
                 pf.IsGiving = true;
                 pf.FinanceOnly = true;
                 pf.Type = r.payinfo.PreferredGivingType;
@@ -414,7 +426,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             modelState.AddModelError("form", "amount zero");
         }
 
-        public void ValidatePaymentForm(ModelStateDictionary modelState)
+        public void ValidatePaymentForm(ModelStateDictionary modelState, bool shouldValidateBilling = true)
         {
             switch (Type)
             {
@@ -428,7 +440,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     modelState.AddModelError("Type", "Please select Bank Account or Credit Card.");
                     break;
             }
-            ValidateBillingDetails(modelState);
+            if(shouldValidateBilling)
+                ValidateBillingDetails(modelState);
         }
 
         public void ValidateBillingDetails(ModelStateDictionary modelState)

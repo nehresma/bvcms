@@ -108,6 +108,16 @@
         ev.preventDefault();
         $.performAction("/OrgGroups/RemoveSelectedFromTargetGroup");
     });
+    
+     $('body').on('click', '#MakeSelectedLeaderOfTargetGroup', function (ev) {
+        ev.preventDefault();
+        $.performAction("/OrgGroups/MakeLeaderOfTargetGroup");
+    });
+    
+    $('body').on('click', '#RemoveSelectedLeaderOfTargetGroup', function (ev) {
+        ev.preventDefault();
+        $.performAction("/OrgGroups/RemoveAsLeaderOfTargetGroup");
+    });
 
     var lastChecked = null;
     $("body").on("click", "input[name = 'list']", function (e) {
@@ -263,9 +273,9 @@
         $("input.new-group-name").val("").focus();
     });
 
-    $("body").on('click', '#submit-new-group', function (ev) {
+    $("#new-group-modal form").submit(function (ev) {
         ev.preventDefault();
-        var f = $(this).closest('form');
+        var f = $(this);
         var q = f.serialize();
         var url = f.attr('action');
         $.post(url, q, function (ret) {
@@ -283,12 +293,16 @@
 
         $("input.rename-group-id").val(groupId);
         $("input.rename-group-name").val(groupName);
-        $('#rename-group-modal').modal('show');
+        $('#rename-group-modal').modal('show');        
     });
     
-    $("body").on('click', '#submit-rename-group', function (ev) {
+    $('#rename-group-modal').on('shown.bs.modal', function (e) {
+        $('input.rename-group-name').focus();
+    });
+    
+    $("#rename-group-modal form").submit(function (ev) {
         ev.preventDefault();
-        var f = $(this).closest('form');
+        var f = $(this);
         var q = f.serialize();
         var url = f.attr('action');
         $.post(url, q, function (ret) {

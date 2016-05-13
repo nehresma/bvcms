@@ -185,7 +185,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     //                    else
                     _org = DbUtil.Db.LoadOrganizationById(orgid.Value);
                 }
-                if (_org == null && (divid.HasValue || masterorgid.HasValue) && (Found == true || IsValidForNew))
+                if (_org == null && (divid.HasValue || masterorgid.HasValue))
                 {
                     if (ComputesOrganizationByAge())
                         _org = GetAppropriateOrg();
@@ -246,7 +246,11 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var oo = q2.FirstOrDefault();
 
             if (oo == null)
-                NoAppropriateOrgError = "Sorry, cannot find an appropriate age group";
+            {
+                NoAppropriateOrgError = person?.BirthDate != null 
+                    ? "Sorry, cannot find an appropriate age group for the birthday we have on record for you" 
+                    : "Sorry, cannot find an appropriate age group";
+            }
             else if (oo.RegEnd.HasValue && DateTime.Now > oo.RegEnd)
                 NoAppropriateOrgError = $"Sorry, registration has ended for {oo.OrganizationName}";
             else if (oo.OrganizationStatusId == OrgStatusCode.Inactive)
@@ -506,6 +510,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private SelectListItem[] ReturnContributionForSetting()
         {
             var fund = DbUtil.Db.ContributionFunds.SingleOrDefault(f => f.FundId == setting.DonationFundId);
+            if (fund == null)
+                throw new Exception($"DonationFundId {setting.DonationFundId} does not point to a fund");
             return new[]
             {
                 new SelectListItem

@@ -330,6 +330,17 @@
             $('#empty-dialog').html(f);
             $('#empty-dialog').modal("show");
 
+            $(".clickEdit", f).editable({
+                mode: 'popup',
+                type: 'textarea',
+                url: "/OrgMemberDialog/EditQuestion/",
+                params: function (params) {
+                    var data = {};
+                    data['id'] = params.pk;
+                    data['value'] = params.value;
+                    return data;
+                }
+            });
             $('#empty-dialog').on('hidden', function () {
                 f.remove();
                 $.RebindMemberGrids();
@@ -575,8 +586,17 @@
         $("a.refresh-pending").click();
     };
 
-    $('body').on('click', '#role-list input[name="role"]', function(ev) {
-        var anyRolesChecked = $('#role-list input[name="role"]').is(':checked');
+    $('body').on('click', '#role-list input[name="role"]', function (ev) {
+        var roles = $('#role-list input[name="role"]:checked');
+        var arr = $.map(roles, function (a) {
+            return a.value;
+        });
+        var checkinonly = arr.length === 1 && arr[0].toLowerCase() === 'checkin';
+        if (checkinonly) {
+            $('#myDataUserRole').prop('checked', false);
+            return;
+        }
+        var anyRolesChecked = arr.length > 0;
         if (anyRolesChecked) {
             $('#myDataUserRole').prop('checked', false);
             $('#role-list input[value="Access"]').prop('checked', true);

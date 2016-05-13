@@ -22,7 +22,6 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
         [HttpGet]
         [Route("~/OnlineReg/Index/{id:int}")]
         [Route("~/OnlineReg/{id:int}")]
-        // ReSharper disable once FunctionComplexityOverflow
         public ActionResult Index(int? id, bool? testing, string email, bool? login, string registertag, bool? showfamily, int? goerid, int? gsid, string source)
         {
             Response.NoCache();
@@ -43,15 +42,10 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
                 throw;
             }
         }
-
         [HttpPost]
         public ActionResult Login(OnlineRegModel m)
         {
             fromMethod = "Login";
-            // they clicked the Login button on the login page
-
-//            var ret = Util.IsDebug() && Util.IsLocalNetworkRequest
-//                ? AccountModel.AutoLogin(m.username, Session, Request) :
             var ret = AccountModel.AuthenticateLogon(m.username, m.password, Session, Request);
 
             if (ret is string)
@@ -137,6 +131,8 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
                 return FlowList(m);
             }
             p.ValidateModelForFind(ModelState, id);
+            if (!ModelState.IsValid)
+                return FlowList(m);
 
             if (p.AnonymousReRegistrant())
                 return View("Continue/ConfirmReregister", m); // send email with link to reg-register
@@ -201,11 +197,6 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
             {
                 orgid = m.Orgid,
                 masterorgid = m.masterorgid,
-#if DEBUG
-                FirstName = "Delaine",
-                LastName = "Carroll",
-                EmailAddress = "delaine@davidcarroll.name"
-#endif
             });
             return FlowList(m);
         }

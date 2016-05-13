@@ -1,62 +1,40 @@
-//------------------------------------------------------------------------------
-// <copyright file="CSSqlFunction.cs" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Data.SqlTypes;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Microsoft.SqlServer.Server;
 
-public partial class UserDefinedFunctions
+namespace CmsDataSqlClr
 {
-    [SqlFunction]
-    public static SqlBoolean IsValidEmail(SqlString addr)
+    public class UserDefinedFunctions
     {
-        if (addr == null)
-            return true;
-        var email = addr.Value.Trim();
-        if (string.IsNullOrEmpty(email))
-            return true;
-        var re1 = new Regex(@"^(.*\b(?=\w))\b[A-Z0-9._%+-]+(?<=[^.])@[A-Z0-9._-]+\.[A-Z]{2,4}\b\b(?!\w)$", RegexOptions.IgnoreCase);
-        var re2 = new Regex(@"^[A-Z0-9._%+-]+(?<=[^.])@[A-Z0-9.-]+\.[A-Z]{2,4}$", RegexOptions.IgnoreCase);
-        return re1.IsMatch(email) || re2.IsMatch(email);
-    }
-    [SqlFunction]
-    public static SqlString RegexMatch(SqlString subject, SqlString pattern)
-    {
-        try
+        public static bool IsValidEmail(string addr)
         {
-            return Regex.Match(subject.Value, pattern.Value, RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.Compiled).Value;
+            var email = addr?.Trim();
+            if (string.IsNullOrEmpty(email))
+                return true;
+            var re1 = new Regex(@"^(.*\b(?=\w))\b[A-Z0-9._%+-]+(?<=[^.])@[A-Z0-9._-]+\.[A-Z]{2,4}\b\b(?!\w)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            var re2 = new Regex(@"^[A-Z0-9._%+-]+(?<=[^.])@[A-Z0-9.-]+\.[A-Z]{2,4}$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            return re1.IsMatch(email) || re2.IsMatch(email);
         }
-        catch (Exception ex)
+
+        public static string RegexMatch(string subject, string pattern)
         {
-            SqlContext.Pipe.Send("Error searching Pattern " + ex.Message);
-            return "";
+            var m = Regex.Match(subject ?? "", pattern, RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+            if (!m.Success)
+                return null;
+            var g = m.Groups["group"];
+            return g.Success ? g.Value : m.Value;
         }
-    }
-    [SqlFunction]
-    public static SqlString AllRegexMatchs(SqlString subject, SqlString pattern)
-    {
-        try
+
+        public static string AllRegexMatchs(string subject, string pattern)
         {
             var list = new List<string>();
-            var re = new Regex(pattern.Value);
-            var match = re.Match(subject.Value);
+            var re = new Regex(pattern);
+            var match = re.Match(subject);
             while (match.Success)
             {
                 list.Add(match.Value);
                 match = match.NextMatch();
             }
             return string.Join("<br>\n", list.ToArray());
-        }
-        catch (Exception ex)
-        {
-            SqlContext.Pipe.Send("Error searching Pattern " + ex.Message);
-            return "";
         }
     }
 }

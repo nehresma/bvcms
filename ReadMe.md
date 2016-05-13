@@ -17,6 +17,11 @@ see LICENSE file in this repository master branch
 
 BVCMS is maintained by TouchPointSoftware, LLC.
 
+**IMPORTANT NOTE:**
+The latest version that in production is tagged with a date and time stamp. 
+You can find these under the main Code tab and then under "releases" sub-tab in GitHub
+There are sub-tabs for commits, branches, releases and contributors.
+
 ### Install Development Tools and required libraries
 
 1. **[Visual Studio Community or Visual Studio Express 2015][IDE]**

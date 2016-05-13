@@ -8,12 +8,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
 {
     public partial class OnlineRegPersonModel
     {
-        public string PrepareSummaryText(Transaction ti)
+        public string PrepareSummaryText()
         {
             if (RecordFamilyAttendance())
                 return SummarizeFamilyAttendance();
 
             var om = GetOrgMember();
+            if (om == null)
+                return "";
             var si = new SummaryInfo(DbUtil.Db, om.PeopleId, om.OrganizationId);
             return si.ToString();
         }

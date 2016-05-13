@@ -15,6 +15,7 @@ namespace CmsData
         {
             var q = db.PeopleQuery2(query);
             var dt = DateTime.Now;
+            db.LogActivity($"PythonModel.AddMembersToOrg(query,{orgId})");
             foreach (var p in q)
             {
                 var db2 = NewDataContext();
@@ -25,6 +26,7 @@ namespace CmsData
 
         public void AddMemberToOrg(object pid, object orgId)
         {
+            db.LogActivity($"PythonModel.AddMemberToOrg({pid},{orgId})");
             AddMembersToOrg(pid.ToInt(), orgId.ToInt());
         }
 
@@ -39,6 +41,29 @@ namespace CmsData
             var db2 = NewDataContext();
             om.AddToGroup(db2, group);
             db2.Dispose();
+        }
+        public void AddSubGroupFromQuery(object query, object orgId, string group)
+        {
+            var q = db.PeopleQuery2(query);
+            db.LogActivity($"PythonModel.AddSubGroupFromQuery(query,{orgId})");
+            foreach (var p in q)
+            {
+                var db2 = NewDataContext();
+                var om = (from mm in db.OrganizationMembers
+                          where mm.PeopleId == p.PeopleId
+                          where mm.OrganizationId == orgId.ToInt()
+                          select mm).SingleOrDefault();
+                om?.AddToGroup(db2, group);
+                db2.Dispose();
+            }
+        }
+
+        public void DropOrgMember(int pid, int orgId)
+        {
+            var db2 = NewDataContext();
+            db.LogActivity($"PythonModel.DropOrgMember({pid},{orgId})");
+            var om = db2.OrganizationMembers.Single(m => m.PeopleId == pid && m.OrganizationId == orgId);
+            om.Drop(db2);
         }
 
         public APIOrganization.Organization GetOrganization(object orgId)
@@ -72,12 +97,41 @@ namespace CmsData
         {
             var db2 = NewDataContext();
 
-            if(person is int)
-                OrganizationMember.InsertOrgMembers(db2, orgid, person.ToInt(), 220, DateTime.Now, null, false);
-            else if(person is Person)
-                OrganizationMember.InsertOrgMembers(db2, orgid, ((Person)person).PeopleId, 220, DateTime.Now, null, false);
+            int? pid = null;
+            if (person is int)
+                pid = person.ToInt2();
+            else if (person is Person)
+                pid = ((Person) person).PeopleId;
+            db.LogActivity($"PythonModel.JoinOrg({pid},{orgid})");
+            if (pid == null)
+                return;
+            OrganizationMember.InsertOrgMembers(db2, orgid, pid.Value, 220, DateTime.Now, null, false);
 
             db2.Dispose();
+        }
+
+        public void MoveToOrg(int pid, int fromOrg, int toOrg)
+        {
+            var db2 = NewDataContext();
+            if (fromOrg == toOrg)
+                return;
+            db.LogActivity($"PythonModel.MoveToOrg({pid},{fromOrg},{toOrg})");
+            var om = db2.OrganizationMembers.Single(m => m.PeopleId == pid && m.OrganizationId == fromOrg);
+            var tom = db2.OrganizationMembers.SingleOrDefault(m => m.PeopleId == pid && m.OrganizationId == toOrg);
+            if (tom == null)
+            {
+                tom = OrganizationMember.InsertOrgMembers(db2,
+                    toOrg, pid, MemberTypeCode.Member, DateTime.Now, null, om.Pending ?? false);
+                if (tom == null)
+                    return;
+            }
+            tom.UserData = om.UserData;
+            tom.MemberTypeId = om.MemberTypeId;
+            tom.ShirtSize = om.ShirtSize;
+            if (om.OrganizationId != tom.OrganizationId)
+                tom.Moved = true;
+            om.Drop(db2);
+            db2.SubmitChanges();
         }
 
         public List<int> OrganizationIds(int progid, int divid, bool? includeInactive)
@@ -101,6 +155,12 @@ namespace CmsData
             var db2 = NewDataContext();
             om.RemoveFromGroup(db2, group);
             db2.Dispose();
+        }
+
+        public void UpdateMainFellowship(int orgId)
+        {
+            var db2 = NewDataContext();
+            db2.UpdateMainFellowship(orgId);
         }
     }
 }

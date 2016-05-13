@@ -9,9 +9,6 @@ using CmsData.Registration;
 using UtilityExtensions;
 using System.Text.RegularExpressions;
 using CmsData.Codes;
-using CmsData.View;
-using CmsWeb.Areas.Search.Models;
-using DocumentFormat.OpenXml.Bibliography;
 using Person = CmsData.Person;
 
 namespace CmsWeb.Areas.OnlineReg.Models
@@ -228,6 +225,12 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 return org.RegistrationTypeId == RegistrationTypeCode.OnlineGiving;
             return false;
         }
+        public bool ShouldPullSpecificFund()
+        {
+            return OnlineGiving()
+                   && !AskDonation()
+                   && settings.Any(vv => vv.Value.DonationFundId > 0);
+        }
 
         public bool NoCreditCardsAllowed()
         {
@@ -326,6 +329,13 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 }
                 return org?.OrganizationName ?? "no org";
             }
+        }
+
+        public string SubmitInstructions() 
+        {
+            Settings v;
+            settings.TryGetValue(org?.OrganizationId ?? 0, out v);
+            return v?.InstructionSubmit;
         }
 
         public string Instructions
@@ -651,7 +661,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 {
                     orgid = Orgid,
                     masterorgid = masterorgid,
-#if DEBUG
+#if DEBUG2
                     FirstName = "Another",
                     LastName = "Person",
                     DateOfBirth = "12/1/1955",

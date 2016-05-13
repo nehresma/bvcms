@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.Caching;
 using System.Web.Mvc;
-using System.Web.Security;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using CmsData;
@@ -37,6 +37,22 @@ namespace CmsWeb.Code
                 return xdoc;
             }
         }
+        private static List<CmsData.View.CustomMenuRole> CustomMenuRoles
+        {
+            get
+            {
+
+                var db = DbUtil.Db;
+                var s = HttpRuntime.Cache[DbUtil.Db.Host + "CustomMenuRoles"] as List<CmsData.View.CustomMenuRole>;
+                if (s == null)
+                {
+                    s = db.ViewCustomMenuRoles.ToList();
+                    HttpRuntime.Cache.Insert(db.Host + "CustomReportsMenu", s, null,
+                        DateTime.Now.AddMinutes(Util.IsDebug() ? 0 : 1), Cache.NoSlidingExpiration);
+                }
+                return s;
+            }
+        }
 
         private static XDocument ReportsMenu
         {
@@ -48,7 +64,7 @@ namespace CmsWeb.Code
             get
             {
                 var xdoc = ReportsMenu;
-                if (xdoc == null || xdoc.Root == null)
+                if (xdoc?.Root == null)
                     return null;
                 return ReportItems(xdoc, "/ReportsMenu");
             }
@@ -77,12 +93,24 @@ namespace CmsWeb.Code
 
         private static string ReportItems(XDocument xdoc, string path)
         {
+            var listroles = CustomMenuRoles;
+            var userroles = DbUtil.Db.CurrentUser.Roles;
             var sb = new StringBuilder();
             foreach (var e in xdoc.XPathSelectElements(path).Elements())
             {
-                var roles = ((string)e.Attribute("roles"))?.Split(',');
-                if (roles != null)
-                    if (!roles.Any(rr => DbUtil.Db.CurrentUser.Roles.Contains(rr)))
+                var link = e.Attribute("link")?.Value;
+                var roles = new List<string>();
+
+                var aroles = e.Attribute("roles")?.Value;
+                if (aroles != null && aroles.HasValue())
+                    roles.AddRange(aroles.Split(','));
+
+                var rroles = listroles.SingleOrDefault(vv => vv.Link == link)?.Role;
+                if (rroles != null && rroles.HasValue())
+                    roles.AddRange(rroles.Split(','));
+
+                if(roles.Count > 0)
+                    if (!roles.Any(rr => userroles.Contains(rr)))
                         continue;
 
                 var tb = new TagBuilder("li");
