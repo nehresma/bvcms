@@ -110,7 +110,7 @@ namespace CmsData
             db2.Dispose();
         }
 
-        public void MoveToOrg(int pid, int fromOrg, int toOrg)
+        public void MoveToOrg(int pid, int fromOrg, int toOrg, int toMemberTypeId = -1)
         {
             var db2 = NewDataContext();
             if (fromOrg == toOrg)
@@ -126,7 +126,14 @@ namespace CmsData
                     return;
             }
             tom.UserData = om.UserData;
-            tom.MemberTypeId = om.MemberTypeId;
+            if (-1 != toMemberTypeId)
+            {
+                tom.MemberTypeId = toMemberTypeId;
+            }
+            else
+            {
+                tom.MemberTypeId = om.MemberTypeId;
+            }
             tom.ShirtSize = om.ShirtSize;
             if (om.OrganizationId != tom.OrganizationId)
                 tom.Moved = true;

@@ -459,7 +459,7 @@ namespace CmsWeb.Models
                 var oid = a[1].ToInt();
                 if (oid == TargetId)
                     continue;
-                new PythonModel(Util.Host).MoveToOrg(pid, oid, TargetId);
+                new PythonModel(Util.Host).MoveToOrg(pid, oid, TargetId, ChangeMemberType == true ? MoveToMemberTypeId : -1);
             }
             DbUtil.Db.UpdateMainFellowship(TargetId);
         }
