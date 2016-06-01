@@ -142,12 +142,25 @@
         var sg = $("#SmallGroup").val();
         switch (t) {
             case "Match All":
-                if (!sg.match(/^ALL/i)) {
+                // Remove any leading NONE
+                if (sg.match(/^NONE/i)) {
+                    sg = sg.substring(5);
+                }
+                if (!sg.match(/^ALL:/i)) {
                     sg = "All:" + sg;
                 }
                 break;
+            case "None":
+                // Remove any leading ALL:
+                if (sg.match(/^ALL:/i)) {
+                    sg = sg.substring(4);
+                }
+                if (!sg.match(/^NONE/i)) {
+                    sg = "None";
+                }
+                break;
             default:
-                if (sg && !sg.match(/^ALL:$/i)) {
+                if (sg && !sg.match(/^ALL:$/i) && !sg.match(/^NONE$/i)) {
                     sg = sg + ';';
                 }
                 sg = sg + t;
